@@ -145,7 +145,7 @@ void graphic::string(char* str,int x,short y,bool opq)
 	srct.y=y;
 	srct.w=drct.x-x;
 	srct.h=5;
-	if(nd<1024)
+	if(nd<MAX_DRAW_OPERATIONS)
 	{
 		dtyp[nd]=DTYP_RECT;
 		dpos[nd]=srct;
@@ -162,7 +162,7 @@ void graphic::box(sbox* box,int col)
 	rect.w=box->w;
 	rect.h=box->h;
 	SDL_FillRect(screen,&rect,cols[col]);
-	if(nd<1024)
+	if(nd<MAX_DRAW_OPERATIONS)
 	{
 		dtyp[nd]=DTYP_RECT;
 		dpos[nd]=rect;	
@@ -180,7 +180,7 @@ void graphic::clip(sbox* box)
 	rect.h=box->h;
 	crct=rect;
 	SDL_SetClipRect(screen,&rect);
-	if(nd<1024)
+	if(nd<MAX_DRAW_OPERATIONS)
 	{
 		dtyp[nd]=DTYP_CLIP;
 		dpos[nd]=rect;	
@@ -193,7 +193,7 @@ void graphic::pix(int x,short y,short col)
 	Uint8 r,g,b;
 	SDL_GetRGB(cols[col],screen->format,&r,&g,&b);
 	pixelColor(screen,x,y,(r<<24)|(g<<16)|(b<<8)|0xFF);
-	if(nd<1024)
+	if(nd<MAX_DRAW_OPERATIONS)
 	{
 		dtyp[nd]=DTYP_PIX;
 		dpos[nd].x=x;
@@ -220,7 +220,7 @@ void graphic::line(int x1,short y1,short x2,short y2,short col)
 		Uint8 r,g,b;
 		SDL_GetRGB(cols[col],screen->format,&r,&g,&b);
 		lineColor(screen,x1,y1,x2,y2,(r<<24)|(g<<16)|(b<<8)|0xFF);
-		if(nd<1024)
+		if(nd<MAX_DRAW_OPERATIONS)
 		{
 			dtyp[nd]=DTYP_LINE;
 			dpos[nd].x=x1;
@@ -266,7 +266,7 @@ void graphic::draw(int x,short y,short rot,short zout,short haze,bool trg)
 				tspr->draw(x+hw,y,9,1,0,false);
 			}
 		}
-		if(nd<1024)
+		if(nd<MAX_DRAW_OPERATIONS)
 		{
 			dtyp[nd]=DTYP_RECT;
 			dpos[nd]=dst;

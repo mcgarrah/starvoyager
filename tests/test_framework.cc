@@ -26,10 +26,11 @@ void TestFramework::init() {
 void TestFramework::assert_true(bool condition, const char* test_name) {
 	total_tests++;
 	if (condition) {
-		passed_tests++;
 		// Check if this is a skipped test
 		if (strstr(test_name, "skipped") != nullptr) {
 			skipped_tests++;
+		} else {
+			passed_tests++;
 		}
 		printf("PASS: %s\n", test_name);
 	} else {

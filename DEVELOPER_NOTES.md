@@ -112,6 +112,35 @@ Use GDB with malloc checking for memory issue detection:
 make gdb-debug  # Enhanced debugging with MALLOC_CHECK_=2
 ```
 
+## Graphics System Architecture
+
+### Drawing Operation Tracking
+
+The graphics system uses a "dirty rectangle" tracking mechanism with a hardcoded limit:
+
+**Buffer Size**: `MAX_DRAW_OPERATIONS = 1024`
+
+**Purpose**: Double-buffered graphics with cleanup tracking
+- `dtyp[1024]` - Stores type of each drawing operation (pixel, line, rectangle, clip)
+- `dpos[1024]` - Stores position/dimensions of each drawing operation
+- `nd` - Counter tracking number of operations stored
+
+**Workflow**:
+1. **Draw Phase**: Each operation (text, boxes, lines, pixels) recorded in arrays
+2. **Display Phase**: `blit()` commits everything to screen
+3. **Cleanup Phase**: `clean()` erases all recorded operations by drawing black over them
+4. **Repeat**: Next frame starts clean
+
+**Why 1024?**
+- **Performance**: Limits memory usage to ~24KB (1024 × 24 bytes per operation)
+- **Capacity**: Allows tracking up to 1024 drawing operations per frame
+- **Era Constraint**: Written for older hardware where memory was more constrained
+
+**Potential Issues**:
+- **Silent Overflow**: Operations beyond 1024 per frame are silently ignored
+- **No Dynamic Sizing**: Fixed buffer regardless of actual usage
+- **Memory Waste**: Always allocates full 1024 slots even if using few
+
 ## Code Coverage Analysis
 
 ### Coverage Reports

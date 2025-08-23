@@ -17,6 +17,7 @@ class graphic //A sprite object
 {
 	public:
 	static const int ISIZE=512; //Graphics index size
+	static const int MAX_DRAW_OPERATIONS=1024; //Maximum number of draw operations to track
 	enum {LOGO=0,FIRE=1,NAV=2,WARP=3,PANEL=4,GRID=5,POS=6,TRG=7}; //Special gfx index/file numbers
 	enum {BLACK=0,RED=1,LIGHTRED=2,GREEN=3,LIGHTGREEN=4,BLUE=5,LIGHTBLUE=6,YELLOW=7,ORANGE=8,PURPLE=9,GREY=10,DARKGREY=11,WHITE=12}; //Colour values
 
@@ -48,8 +49,8 @@ class graphic //A sprite object
 	static SDL_Surface* cloak; //Cloaking haze image
 	static unsigned long cols[16]; //Colour keys, defined at initialisation
 	static int nd; //Next 'drawn' slot
-	static int dtyp[1024]; //Stores the type of drawn objects
-	static SDL_Rect dpos[1024]; //Stores the position of drawn objects
+	static int dtyp[MAX_DRAW_OPERATIONS]; //Stores the type of drawn objects
+	static SDL_Rect dpos[MAX_DRAW_OPERATIONS]; //Stores the position of drawn objects
 	static SDL_Rect crct; //Stored clipping rect
 
 	int self; //Self index of this sprite

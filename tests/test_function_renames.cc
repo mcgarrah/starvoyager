@@ -37,9 +37,11 @@ void test_password_encryption() {
 	try {
 		// Test password obscuring (obscure function)
 		char test_password[33];
-		strcpy(test_password, "testpass");
+		strncpy(test_password, "testpass", sizeof(test_password)-1);
+		test_password[sizeof(test_password)-1] = '\0';
 		char original[33];
-		strcpy(original, test_password);
+		strncpy(original, test_password, sizeof(original)-1);
+		original[sizeof(original)-1] = '\0';
 		
 		calc::encrypt_password(test_password);
 		

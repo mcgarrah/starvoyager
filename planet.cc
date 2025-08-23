@@ -43,7 +43,7 @@ planet::planet(char* nam,cord put,int typ,alliance* all)
 	}
 	if(self==-1)
 		throw error("No free slots for planet");
-	sprintf(this->nam,"%s",nam);
+	snprintf(this->nam, sizeof(this->nam), "%s", nam);
 	this->loc=put;
 	this->all=all;
 	rot=calc::rnd(36);

@@ -83,7 +83,10 @@ fi
 
 # Build tests
 echo -e "${YELLOW}Building tests...${NC}"
-cd tests
+if ! cd tests; then
+    echo -e "${RED}Failed to change to tests directory${NC}"
+    exit 1
+fi
 if ! make; then
     echo -e "${RED}Failed to build tests${NC}"
     exit 1

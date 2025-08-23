@@ -113,6 +113,6 @@ long sockhelper::getcount()
 
 Uint32 sockhelper::alarmcallback(Uint32 dly,void* from)
 {
-	((sockhelper*)from)->blck=true;
+	static_cast<sockhelper*>(from)->blck=true;
 	return 0;
 }
