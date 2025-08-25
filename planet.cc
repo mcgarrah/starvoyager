@@ -55,7 +55,7 @@ planet::planet(char* nam,cord put,int typ,alliance* all)
 		spr=ilo+calc::rnd(ihi-ilo+1);
 	this->typ=typ;
 	for(int j=0;j<MAX_EQUIPMENT_SLOTS;j++)
-		sold[j]=all->getequip();
+		sold[j]=all->get_random_equipment();
 }
 
 planet::~planet()
@@ -328,7 +328,7 @@ int planet::interact(char* txt,short cmod,short opr,ship* mshp)
 				if(sold[i])
 				{
 					cost=mshp->purchase(sold[i],all->ripo,false);
-					txt+=sprintf(txt,"[%hd] %s \nCost: %ld C  Mass: %hd\n",i+1,sold[i]->nam,cost,sold[i]->mss);
+					txt+=sprintf(txt,"[%hd] %s \nCost: %ld C  Mass: %hd\n",i+1,sold[i]->nam,cost,sold[i]->mass);
 				}
 			}
 			txt+=sprintf(txt,"\nAvailable mass: %hd\n",mshp->get_available_cargo_space());
@@ -461,8 +461,8 @@ void planet::shipyard()
 	put.x=loc.x+calc::rnd(SPAWN_RADIUS)-calc::rnd(SPAWN_RADIUS);
 	put.y=loc.y+calc::rnd(SPAWN_RADIUS)-calc::rnd(SPAWN_RADIUS);
 
-	lshp=all->getspawn();
-	aity=all->getai();
+	lshp=all->get_spawn_ship_template();
+	aity=all->get_ai_behavior_type();
 	if(lshp)
 	{
 		try

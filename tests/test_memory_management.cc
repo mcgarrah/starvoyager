@@ -167,9 +167,9 @@ void test_alliance_memory_patterns() {
 			alliance* test_alliance = alliance::get(i);
 			if (test_alliance) {
 				// Test alliance operations don't leak
-				equip* test_equip = test_alliance->getequip();
-				ship* test_spawn = test_alliance->getspawn();
-				int ai_type = test_alliance->getai();
+				equip* test_equip = test_alliance->get_random_equipment();
+				ship* test_spawn = test_alliance->get_spawn_ship_template();
+				int ai_type = test_alliance->get_ai_behavior_type();
 			}
 		}
 		

@@ -24,9 +24,9 @@ class alliance //Alliance type
 	static void maketerritories(); //Generate the territories for all alliances
 
 	bool opposes(alliance* all); //Find out if this alliance opposes the given alliance
-	equip* getequip(); //Get a random equipment item that this alliance stocks
-	ship* getspawn(); //Gets an appropriate ship template to spawn from, by examining the quotas
-	int getai(); //Gets an appropriate AI key to spawn in, also by examining the quotas
+	equip* get_random_equipment(); //Get a random equipment item that this alliance stocks
+	ship* get_spawn_ship_template(); //Gets an appropriate ship template to spawn from, by examining the quotas
+	int get_ai_behavior_type(); //Gets an appropriate AI key to spawn in, also by examining the quotas
 
 	int self; //Self index
 	char nam[65]; //Name

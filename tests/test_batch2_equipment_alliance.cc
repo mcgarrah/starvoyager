@@ -19,7 +19,7 @@ void test_equipment_type_constants() {
 		equip* test_equip = equip::get(0);
 		if (test_equip) {
 			// Test equipment type access
-			int equipment_type = test_equip->typ;
+			int equipment_type = test_equip->equipment_type;
 			TEST_ASSERT(equipment_type >= 0, "equipment type is valid");
 		}
 		
@@ -36,7 +36,7 @@ void test_equipment_range_calculations() {
 		equip* test_equip = equip::get(0);
 		if (test_equip) {
 			// Test range property access
-			long range = test_equip->rng;
+			long range = test_equip->range;
 			TEST_ASSERT(range >= 0, "equipment range is non-negative");
 		}
 		
@@ -53,7 +53,7 @@ void test_power_requirement_validation() {
 		equip* test_equip = equip::get(0);
 		if (test_equip) {
 			// Test power requirement access
-			long power = test_equip->pow;
+			long power = test_equip->power_requirement;
 			TEST_ASSERT(power >= 0, "equipment power requirement is non-negative");
 		}
 		
@@ -70,7 +70,7 @@ void test_capacity_management() {
 		equip* test_equip = equip::get(0);
 		if (test_equip) {
 			// Test capacity property access
-			long capacity = test_equip->cap;
+			long capacity = test_equip->capacity;
 			TEST_ASSERT(capacity >= 0, "equipment capacity is non-negative");
 		}
 		
@@ -87,7 +87,7 @@ void test_equipment_mass_calculations() {
 		equip* test_equip = equip::get(0);
 		if (test_equip) {
 			// Test mass property access
-			int mass = test_equip->mss;
+			int mass = test_equip->mass;
 			TEST_ASSERT(mass >= 0, "equipment mass is non-negative");
 		}
 		
@@ -104,7 +104,7 @@ void test_readiness_timer_mechanics() {
 		equip* test_equip = equip::get(0);
 		if (test_equip) {
 			// Test readiness property access
-			(void)test_equip->rdy;
+			(void)test_equip->readiness_timer;
 			// Readiness can be negative, zero, or positive
 		}
 		
@@ -122,7 +122,7 @@ void test_alliance_equipment_generation() {
 		alliance* test_alliance = alliance::get(0);
 		if (test_alliance) {
 			// Test equipment generation
-			(void)test_alliance->getequip();
+			(void)test_alliance->get_random_equipment();
 			// Should not crash, may return null
 		}
 		
@@ -139,7 +139,7 @@ void test_alliance_spawn_templates() {
 		alliance* test_alliance = TestShipFactory::create_test_alliance();
 		if (test_alliance) {
 			// Test spawn template generation
-			(void)test_alliance->getspawn();
+			(void)test_alliance->get_spawn_ship_template();
 			// Should not crash, may return null
 		}
 		
@@ -156,7 +156,7 @@ void test_alliance_ai_behavior_assignment() {
 		alliance* test_alliance = alliance::get(0);
 		if (test_alliance) {
 			// Test AI behavior assignment
-			int ai_behavior = test_alliance->getai();
+			int ai_behavior = test_alliance->get_ai_behavior_type();
 			TEST_ASSERT(ai_behavior >= 0, "AI behavior type is valid");
 		}
 		

@@ -86,12 +86,12 @@ bool alliance::opposes(alliance* all)
 		return false;
 }
 
-equip* alliance::getequip()
+equip* alliance::get_random_equipment()
 {
 	return eqps[calc::rnd(16)];
 }
 
-ship* alliance::getspawn()
+ship* alliance::get_spawn_ship_template()
 {
 	int shpc[ship::LIBSIZE]; //Count of each ship type
 	ship* tshp; //Ship being examined
@@ -113,7 +113,7 @@ ship* alliance::getspawn()
 	return NULL;
 }
 
-int alliance::getai()
+int alliance::get_ai_behavior_type()
 {
 	int aic[32]; //Count of each AI type
 	ship* tshp; //Ship being examined

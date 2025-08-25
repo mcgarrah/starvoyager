@@ -343,7 +343,7 @@ void ship::shoot(bool torp)
 	weapon_range=0;
 	for(int i=0;i<32;i++)
 	{
-		if(slots[i].item && ((torp && slots[i].item->typ==equip::LAUNCHER) || (!torp && slots[i].item->typ==equip::PHASER)))
+		if(slots[i].item && ((torp && slots[i].item->equipment_type==equip::LAUNCHER) || (!torp && slots[i].item->equipment_type==equip::PHASER)))
 		{
 			launcher_equipment=slots[i].item;
 			vector_to_target.xx=enem->loc.x-loc.x;
@@ -352,9 +352,9 @@ void ship::shoot(bool torp)
 			distance_to_target=polar_to_target.rad;
 
 			can=false;
-			if(launcher_equipment->typ==equip::PHASER)
+			if(launcher_equipment->equipment_type==equip::PHASER)
 			{
-				weapon_range=launcher_equipment->rng*launcher_equipment->trck;
+				weapon_range=launcher_equipment->range*launcher_equipment->trck;
 				if(launcher_equipment->trck)
 				{
 					corr.xx=((enem->mov.xx-mov.xx)*(polar_to_target.rad/launcher_equipment->trck));
@@ -367,8 +367,8 @@ void ship::shoot(bool torp)
 					polar_to_target.rad=distance_to_target;
 				}
 			}
-			if(launcher_equipment->typ==equip::LAUNCHER)
-				weapon_range=((launcher_equipment->rng*launcher_equipment->rng)/2)*launcher_equipment->trck;
+			if(launcher_equipment->equipment_type==equip::LAUNCHER)
+				weapon_range=((launcher_equipment->range*launcher_equipment->range)/2)*launcher_equipment->trck;
 
 			if(polar_to_target.rad<=weapon_range)
 				can=true;
@@ -383,9 +383,9 @@ void ship::shoot(bool torp)
 					can=false;	
 				if(angle_difference>(launcher_equipment->acov) || angle_difference<-(launcher_equipment->acov))
 					can=false;		
-				if(launcher_equipment->typ==equip::PHASER && power_plant->cap<launcher_equipment->pow)
+				if(launcher_equipment->equipment_type==equip::PHASER && power_plant->cap<launcher_equipment->power_requirement)
 					can=false;
-				if(launcher_equipment->typ==equip::LAUNCHER && !(slots[i].cap>0))
+				if(launcher_equipment->equipment_type==equip::LAUNCHER && !(slots[i].cap>0))
 					can=false;
 				if(slots[i].rdy!=0)
 					can=false;
@@ -420,30 +420,30 @@ void ship::shoot(bool torp)
 				emission_vector.xx+=mov.xx;
 				emission_vector.yy+=mov.yy;
 
-				if(launcher_equipment->typ==equip::PHASER)
+				if(launcher_equipment->equipment_type==equip::PHASER)
 				{
-					power_plant->cap-=launcher_equipment->pow;
+					power_plant->cap-=launcher_equipment->power_requirement;
 					try
 					{
-						new frag(emission_location,frag::ENERGY,launcher_equipment->spr,launcher_equipment->col,enem,this,emission_vector,((polar_to_target.ang+5)/10),launcher_equipment->pow,0,launcher_equipment->rng);
+						new frag(emission_location,frag::ENERGY,launcher_equipment->sprite_index,launcher_equipment->color_index,enem,this,emission_vector,((polar_to_target.ang+5)/10),launcher_equipment->power_requirement,0,launcher_equipment->range);
 					}
 					catch(error it)
 					{
 					}
 				}
-				if(launcher_equipment->typ==equip::LAUNCHER)
+				if(launcher_equipment->equipment_type==equip::LAUNCHER)
 				{
 					slots[i].cap--;
 					try
 					{
-						new frag(emission_location,frag::HOMER,launcher_equipment->spr,launcher_equipment->col,enem,this,emission_vector,0,launcher_equipment->pow,launcher_equipment->trck,launcher_equipment->rng);
+						new frag(emission_location,frag::HOMER,launcher_equipment->sprite_index,launcher_equipment->color_index,enem,this,emission_vector,0,launcher_equipment->power_requirement,launcher_equipment->trck,launcher_equipment->range);
 					}
 					catch(error it)
 					{
 					}
 				}
-				server::registernoise(this,launcher_equipment->snd);
-				slots[i].rdy=launcher_equipment->rdy;
+				server::registernoise(this,launcher_equipment->sound_index);
+				slots[i].rdy=launcher_equipment->readiness_timer;
 				if(torp)
 					break;
 			}
@@ -460,12 +460,12 @@ bool ship::see(ship* target_ship)
 	if(target_ship==this) //Can always see self
 		return true;
 	if(sensor_array) //Set the sensor range, or default if no sensor suite
-		weapon_range=sensor_array->item->rng;
+		weapon_range=sensor_array->item->range;
 	else
 		weapon_range=1000;
 	if(target_ship->vel.rad<20) //Slower ships less visible
 		weapon_range-=(((weapon_range/2)*(20-target_ship->vel.rad))/20);
-	if(target_ship->cloaking_device && target_ship->cloaking_device->cap==target_ship->cloaking_device->item->cap) //Cloaked ships even less visible
+	if(target_ship->cloaking_device && target_ship->cloaking_device->cap==target_ship->cloaking_device->item->capacity) //Cloaked ships even less visible
 		weapon_range/=8;
 	if((target_ship->loc.x-loc.x)>weapon_range) //Bounds checking
 		return false;
@@ -485,7 +485,7 @@ bool ship::see(planet* target_planet)
 	if(!target_planet) //Null planet
 		return false;
 	if(sensor_array) //Set the sensor range, or default if no sensor suite
-		weapon_range=sensor_array->item->rng;
+		weapon_range=sensor_array->item->range;
 	else
 		weapon_range=1000;
 	if(target_planet->typ==planet::STAR) //Can always see stars
@@ -508,7 +508,7 @@ bool ship::see(frag* tfrg)
 	if(!tfrg) //Null frag
 		return false;
 	if(sensor_array) //Set the sensor range, or default if no sensor suite
-		weapon_range=sensor_array->item->rng;
+		weapon_range=sensor_array->item->range;
 	else
 		weapon_range=1000;
 	if(tfrg->trg==this || tfrg->own==this) //For bandwidth spamming reasons, only see frags when really close unless they concern you
@@ -564,15 +564,15 @@ int ship::interact(char* txt,short cmod,short opr,ship* player_ship)
 				calc::getspeed(max_warp_speed,spd);
 				txt+=sprintf(txt,"Maximum velocity: %s\n",spd);
 				if(shield_generator)
-					txt+=sprintf(txt,"Shield capability: %ld\n",shield_generator->item->cap);
+					txt+=sprintf(txt,"Shield capability: %ld\n",shield_generator->item->capacity);
 				else
 					txt+=sprintf(txt,"No shields");
 				if(power_plant)
-					txt+=sprintf(txt,"Maximum power capacity: %ld\n",power_plant->item->cap);
+					txt+=sprintf(txt,"Maximum power capacity: %ld\n",power_plant->item->capacity);
 				else
 					txt+=sprintf(txt,"No power plant");
 				if(fuel_tank)
-					txt+=sprintf(txt,"Maximum fuel storage: %ld\n",fuel_tank->item->cap);
+					txt+=sprintf(txt,"Maximum fuel storage: %ld\n",fuel_tank->item->capacity);
 				else
 					txt+=sprintf(txt,"No fuel storage");
 
@@ -622,12 +622,12 @@ int ship::interact(char* txt,short cmod,short opr,ship* player_ship)
 			{
 				if(slots[i].item)
 				{
-					if(slots[i].item->typ==equip::LAUNCHER)
+					if(slots[i].item->equipment_type==equip::LAUNCHER)
 						if(i==selected_equipment_index)
 							txt+=sprintf(txt,">%s [%ld]<\n",slots[i].item->nam,slots[i].cap);
 						else
 							txt+=sprintf(txt," %s [%ld]\n",slots[i].item->nam,slots[i].cap);
-					else if(slots[i].item->typ==equip::FUELTANK && slots[i].cap==0)
+					else if(slots[i].item->equipment_type==equip::FUELTANK && slots[i].cap==0)
 						if(i==selected_equipment_index)
 							txt+=sprintf(txt,">%s< [empty]\n",slots[i].item->nam);
 						else
@@ -686,7 +686,7 @@ int ship::interact(char* txt,short cmod,short opr,ship* player_ship)
 		{
 			if(selected_equipment_index>=0 && selected_equipment_index<32 && slots[selected_equipment_index].item)
 			{
-				if(slots[selected_equipment_index].item->typ==equip::TRANSPORTER)
+				if(slots[selected_equipment_index].item->equipment_type==equip::TRANSPORTER)
 				{
 					sprintf(txt,"Cannot jettison transporters");
 				}
@@ -784,7 +784,7 @@ int ship::get_available_cargo_space()
 	for(int i=0;i<32;i++)
 	{
 		if(slots[i].item)
-			out-=slots[i].item->mss;
+			out-=slots[i].item->mass;
 	}
 	return out;
 }
@@ -794,7 +794,7 @@ void ship::cloak()
 	if(cloaking_device && cloaking_device->rdy!=0)
 	{
 		cloaking_device->rdy=0;
-		server::registernoise(this,cloaking_device->item->snd);
+		server::registernoise(this,cloaking_device->item->sound_index);
 	}
 }
 
@@ -805,7 +805,7 @@ void ship::uncloak()
 		cloaking_device->rdy=-1;
 		if(cloaking_device->cap>0)
 			cloaking_device->cap=-cloaking_device->cap;
-		server::registernoise(this,cloaking_device->item->snd);
+		server::registernoise(this,cloaking_device->item->sound_index);
 	}
 }
 
@@ -838,24 +838,24 @@ void ship::serialize_to_network(int typ,unsigned char* buf)
 		buf+=2;
 
 		if(power_plant && power_plant->cap>0)
-			calc::inttodat((100*power_plant->cap)/(power_plant->item->cap),buf);
+			calc::inttodat((100*power_plant->cap)/(power_plant->item->capacity),buf);
 		else
 			calc::inttodat(0,buf);
 		buf+=2;
 
 		if(shield_generator && shield_generator->cap>0)
-			calc::inttodat((100*shield_generator->cap)/(shield_generator->item->cap),buf);
+			calc::inttodat((100*shield_generator->cap)/(shield_generator->item->capacity),buf);
 		else
 			calc::inttodat(0,buf);
 		buf+=2;
 
 		if(fuel_tank && fuel_tank->cap>0)
-			calc::inttodat((100*fuel_tank->cap)/(fuel_tank->item->cap),buf);
+			calc::inttodat((100*fuel_tank->cap)/(fuel_tank->item->capacity),buf);
 		else
 			calc::inttodat(0,buf);
 		buf+=2;
 		if(sensor_array)
-			calc::longtodat(sensor_array->item->rng,buf);
+			calc::longtodat(sensor_array->item->range,buf);
 		else
 			calc::longtodat(0,buf);
 		buf+=4;
@@ -907,12 +907,12 @@ void ship::serialize_to_network(int typ,unsigned char* buf)
 		buf+=2;
 		*buf=0;
 		buf+=1;
-		if(cloaking_device && cloaking_device->item->cap)
+		if(cloaking_device && cloaking_device->item->capacity)
 		{
 			if(cloaking_device->cap>=0)
-				*buf=100-((100*cloaking_device->cap)/cloaking_device->item->cap);
+				*buf=100-((100*cloaking_device->cap)/cloaking_device->item->capacity);
 			else
-				*buf=100+((100*cloaking_device->cap)/cloaking_device->item->cap);
+				*buf=100+((100*cloaking_device->cap)/cloaking_device->item->capacity);
 		}
 		else
 			*buf=100;
@@ -964,7 +964,7 @@ void ship::hit(int mag,cord fragment_location,vect fragment_velocity,ship* src)
 	{
 		try
 		{
-			new frag(fragment_location,frag::DEBRIS,shield_generator->item->spr,-1,NULL,this,mov,calc::rnd(36),0,0,2);
+			new frag(fragment_location,frag::DEBRIS,shield_generator->item->sprite_index,-1,NULL,this,mov,calc::rnd(36),0,0,2);
 		}
 		catch(error it)
 		{
@@ -1070,11 +1070,11 @@ long ship::purchase(int prch,short ripo,bool buy)
 	{
 		if(fuel_tank)
 		{
-			if((fuel_tank->cap)<(fuel_tank->item->cap))
+			if((fuel_tank->cap)<(fuel_tank->item->capacity))
 				cost=ripo/4;
 			if(buy)
 			{
-				fuel_tank->cap=fuel_tank->item->cap;
+				fuel_tank->cap=fuel_tank->item->capacity;
 				ply->debit(cost);
 			}
 		}
@@ -1083,15 +1083,15 @@ long ship::purchase(int prch,short ripo,bool buy)
 	{
 		for(int i=0;i<32;i++)
 		{
-			if(slots[i].item && slots[i].item->typ==equip::LAUNCHER)
+			if(slots[i].item && slots[i].item->equipment_type==equip::LAUNCHER)
 			{
-				if(slots[i].cap<slots[i].item->cap)
+				if(slots[i].cap<slots[i].item->capacity)
 				{
 					cost=(slots[i].item->cost*ripo)/1000;
 					if(buy)
 					{
 						ply->debit(cost);
-						slots[i].cap=slots[i].item->cap;
+						slots[i].cap=slots[i].item->capacity;
 					}
 					break;
 				}
@@ -1117,18 +1117,18 @@ long ship::purchase(equip* prch,int ripo,bool buy)
 	if(!prch)
 		return 0;
 	cost=(prch->cost*ripo)/100;
-	if(buy && !(prch->mss>get_available_cargo_space()))
+	if(buy && !(prch->mass>get_available_cargo_space()))
 	{
 		for(int i=0;i<32;i++)
 		{
 			if(!slots[i].item)
 			{
-				if((slots[i].pos.rad>=0 && (prch->typ==equip::PHASER || prch->typ==equip::LAUNCHER)) || (slots[i].pos.rad==-1 && prch->typ!=equip::PHASER && prch->typ!=equip::LAUNCHER))
+				if((slots[i].pos.rad>=0 && (prch->equipment_type==equip::PHASER || prch->equipment_type==equip::LAUNCHER)) || (slots[i].pos.rad==-1 && prch->equipment_type!=equip::PHASER && prch->equipment_type!=equip::LAUNCHER))
 				{
 					ply->debit(cost);
 					slots[i].item=prch;
-					slots[i].cap=prch->cap;
-					slots[i].rdy=prch->rdy;
+					slots[i].cap=prch->capacity;
+					slots[i].rdy=prch->readiness_timer;
 					update_equipment_references();
 					break;
 				}
@@ -1154,11 +1154,11 @@ void ship::transport(planet* to)
 		throw error("Cannot transport while cloaked");
 	for(int i=0;i<32;i++)
 	{
-		if(slots[i].item && slots[i].item->typ==equip::TRANSPORTER && slots[i].rdy==0 && power_plant->cap>=slots[i].item->pow && slots[i].item->rng>=pto.rad)
+		if(slots[i].item && slots[i].item->equipment_type==equip::TRANSPORTER && slots[i].rdy==0 && power_plant->cap>=slots[i].item->power_requirement && slots[i].item->range>=pto.rad)
 		{
-			power_plant->cap-=slots[i].item->pow;
-			slots[i].rdy=slots[i].item->rdy;
-			server::registersound(this,slots[i].item->snd);
+			power_plant->cap-=slots[i].item->power_requirement;
+			slots[i].rdy=slots[i].item->readiness_timer;
+			server::registersound(this,slots[i].item->sound_index);
 			return;
 		}
 	}
@@ -1185,11 +1185,11 @@ void ship::transport(ship* to)
 		throw error("Cannot transport through destination's cloak");
 	for(int i=0;i<32;i++)
 	{
-		if(slots[i].item && slots[i].item->typ==equip::TRANSPORTER && slots[i].rdy==0 && power_plant->cap>=slots[i].item->pow && slots[i].item->rng>=pto.rad)
+		if(slots[i].item && slots[i].item->equipment_type==equip::TRANSPORTER && slots[i].rdy==0 && power_plant->cap>=slots[i].item->power_requirement && slots[i].item->range>=pto.rad)
 		{
-			power_plant->cap-=slots[i].item->pow;
-			slots[i].rdy=slots[i].item->rdy;
-			server::registersound(this,slots[i].item->snd);
+			power_plant->cap-=slots[i].item->power_requirement;
+			slots[i].rdy=slots[i].item->readiness_timer;
+			server::registersound(this,slots[i].item->sound_index);
 			return;
 		}
 	}
@@ -1344,7 +1344,7 @@ void ship::load()
 			sprintf(atsc,"Slot%hdCapacity",i);
 			slots[i].cap=database::getvalue(atsc);
 			if(slots[i].cap==-1 && slots[i].item)
-				slots[i].cap=slots[i].item->cap;
+				slots[i].cap=slots[i].item->capacity;
 		} catch(...) {
 			// If loading fails, leave slot in safe default state
 		}
@@ -1521,7 +1521,7 @@ void ship::follow(ship* target_ship)
 	double tol; //Angular tolerance
 
 	polar_to_target.ang=target_ship->vel.ang+90+(self*29)%180; //Find deterministic formation angle to hold at around target ship
-	polar_to_target.rad=100+(self*17)%((sensor_array ? sensor_array->item->rng : 1000)/16); //Deterministic range to hold based on sensor range
+	polar_to_target.rad=100+(self*17)%((sensor_array ? sensor_array->item->range : 1000)/16); //Deterministic range to hold based on sensor range
 	vector_to_target=polar_to_target.tovect();
 		
 	vector_to_target.xx+=target_ship->loc.x-loc.x;
@@ -1535,7 +1535,7 @@ void ship::follow(ship* target_ship)
 		dd=dd+360; //Evaluate angle between current heading and target bearing
 
 	if(!see(target_ship))
-		polar_to_target.rad-=(sensor_array ? sensor_array->item->rng : 1000)/3; //If you can't see the target, stand off a little
+		polar_to_target.rad-=(sensor_array ? sensor_array->item->range : 1000)/3; //If you can't see the target, stand off a little
 
 	tol=turn_rate*2+2;
 	if(vel.rad<=5) 
@@ -1591,7 +1591,7 @@ void ship::execute_attack_maneuvers(ship* target_ship,int str)
 		polar_to_target.ang=target_ship->vel.ang+45+(str-self*29)%135;
 	else
 		polar_to_target.ang=target_ship->vel.ang-45-(str+self*29)%135;
-	polar_to_target.rad=100+(self*17)%((str+(sensor_array ? sensor_array->item->rng : 1000))/16); //Back off a little depending on sensor range
+	polar_to_target.rad=100+(self*17)%((str+(sensor_array ? sensor_array->item->range : 1000))/16); //Back off a little depending on sensor range
 	vector_to_target=polar_to_target.tovect();
 		
 	vector_to_target.xx+=target_ship->loc.x-loc.x;
@@ -1605,7 +1605,7 @@ void ship::execute_attack_maneuvers(ship* target_ship,int str)
 		dd=dd+360; //Evaluate angle between current heading and target bearing
 
 	if(!see(target_ship))
-		polar_to_target.rad-=(sensor_array ? sensor_array->item->rng : 1000)/3; //If you can't see the target, stand off a little
+		polar_to_target.rad-=(sensor_array ? sensor_array->item->range : 1000)/3; //If you can't see the target, stand off a little
 	tol=turn_rate*2+2;
 
 	if(vel.rad<=5) 
@@ -1666,17 +1666,17 @@ void ship::maintain()
 	{
 		if(power_plant && fuel_tank)
 		{
-			if((power_plant->cap)<(power_plant->item->cap) && fuel_tank->cap>0)
+			if((power_plant->cap)<(power_plant->item->capacity) && fuel_tank->cap>0)
 			{
-				fuel_tank->cap-=power_plant->item->pow;
-				power_plant->cap+=power_plant->item->pow;
+				fuel_tank->cap-=power_plant->item->power_requirement;
+				power_plant->cap+=power_plant->item->power_requirement;
 				if(fuel_tank->cap<0)
 					fuel_tank->cap=0;
 			}
-			if((power_plant->cap)>(power_plant->item->cap))
+			if((power_plant->cap)>(power_plant->item->capacity))
 			{
-				fuel_tank->cap+=(power_plant->cap)-(power_plant->item->cap);
-				power_plant->cap=power_plant->item->cap;
+				fuel_tank->cap+=(power_plant->cap)-(power_plant->item->capacity);
+				power_plant->cap=power_plant->item->capacity;
 			}
 		}
 	}
@@ -1688,17 +1688,17 @@ void ship::maintain()
 			if(slots[i].rdy>0)
 				slots[i].rdy--;
 			else
-				if(slots[i].rdy<0 && (slots[i].item->typ==equip::PHASER || slots[i].item->typ==equip::LAUNCHER || slots[i].item->typ==equip::TRANSPORTER))
+				if(slots[i].rdy<0 && (slots[i].item->equipment_type==equip::PHASER || slots[i].item->equipment_type==equip::LAUNCHER || slots[i].item->equipment_type==equip::TRANSPORTER))
 					slots[i].rdy=0;
 		}
 	}
 
-	if(shield_generator && shield_generator->rdy==0 && power_plant && (power_plant->cap)>=shield_generator->item->pow)
+	if(shield_generator && shield_generator->rdy==0 && power_plant && (power_plant->cap)>=shield_generator->item->power_requirement)
 	{
-		shield_generator->cap+=shield_generator->item->pow;
-		power_plant->cap-=shield_generator->item->pow;
-		if(shield_generator->cap>shield_generator->item->cap)
-			shield_generator->cap=shield_generator->item->cap;
+		shield_generator->cap+=shield_generator->item->power_requirement;
+		power_plant->cap-=shield_generator->item->power_requirement;
+		if(shield_generator->cap>shield_generator->item->capacity)
+			shield_generator->cap=shield_generator->item->capacity;
 	}
 	else
 	{
@@ -1709,11 +1709,11 @@ void ship::maintain()
 	{
 		if(cloaking_device->rdy==0)
 		{
-			if(power_plant && (power_plant->cap)>=(cloaking_device->item->pow*mass)/20)
-				power_plant->cap-=(cloaking_device->item->pow*mass)/20;
+			if(power_plant && (power_plant->cap)>=(cloaking_device->item->power_requirement*mass)/20)
+				power_plant->cap-=(cloaking_device->item->power_requirement*mass)/20;
 			else
 				uncloak();
-			if(cloaking_device->cap<cloaking_device->item->cap)
+			if(cloaking_device->cap<cloaking_device->item->capacity)
 				cloaking_device->cap++;
 		}
 		else
@@ -1901,7 +1901,7 @@ void ship::execute_ai_behavior()
 		case AI_FLEET:
 		if(enem)
 		{
-			if(shield_generator && shield_generator->cap<shield_generator->item->cap)
+			if(shield_generator && shield_generator->cap<shield_generator->item->capacity)
 				execute_attack_maneuvers(enem,individual_strobe);	
 			else if(frnd)
 				follow(frnd);
@@ -1979,7 +1979,7 @@ void ship::handle_weapon_targeting(int str)
 	{
 		shoot(false);
 		//Shoot torpedoes if they appear more threatening; i.e. have a greater maximum shield capacity
-		if(str>50 && enem->shield_generator && this->shield_generator && ((enem->shield_generator->item->cap)*2)>(this->shield_generator->item->cap))
+		if(str>50 && enem->shield_generator && this->shield_generator && ((enem->shield_generator->item->capacity)*2)>(this->shield_generator->item->capacity))
 		{
 			shoot(true);
 		}
@@ -2002,7 +2002,7 @@ void ship::update_equipment_references()
 	{
 		if(slots[i].item)
 		{
-			switch(slots[i].item->typ)
+			switch(slots[i].item->equipment_type)
 			{
 				case equip::POWER:
 				power_plant=&slots[i];

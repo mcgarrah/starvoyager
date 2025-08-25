@@ -55,15 +55,15 @@ equip::equip(int self)
 void equip::load()
 {
 	database::getvalue("Name",nam);
-	typ=database::getvalue("Type");
-	mss=database::getvalue("Mass");
-	spr=database::getvalue("Sprite");
-	col=database::getvalue("Colour");
-	snd=database::getvalue("Sound");
-	pow=database::getvalue("Power");
-	rdy=database::getvalue("CycleTime");
-	cap=database::getvalue("Capacity");
-	rng=database::getvalue("Range");
+	equipment_type=database::getvalue("Type");
+	mass=database::getvalue("Mass");
+	sprite_index=database::getvalue("Sprite");
+	color_index=database::getvalue("Colour");
+	sound_index=database::getvalue("Sound");
+	power_requirement=database::getvalue("Power");
+	readiness_timer=database::getvalue("CycleTime");
+	capacity=database::getvalue("Capacity");
+	range=database::getvalue("Range");
 	trck=database::getvalue("Tracking");
 	acov=database::getvalue("Coverage");
 	cost=database::getvalue("Cost");
