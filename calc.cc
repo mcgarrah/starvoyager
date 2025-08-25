@@ -24,7 +24,7 @@ void calc::init()
 	srand(os::getseed());
 }
 
-long calc::rnd(long max)
+long calc::random_int(long max)
 {
 	if(max==0)
 		return 0;

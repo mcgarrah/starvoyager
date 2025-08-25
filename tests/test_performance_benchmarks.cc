@@ -112,8 +112,8 @@ void benchmark_graphics_rendering() {
 		// Simulate rendering calculations
 		for (int i = 0; i < 10000; i++) {
 			pol p = {(double)(i % 360), (double)(i % 100)};
-			vect v = p.tovect();
-			pol p2 = v.topol();
+			vect v = p.to_vector_coordinates();
+			pol p2 = v.to_polar_coordinates();
 		}
 		
 		double elapsed = end_benchmark();
@@ -180,10 +180,10 @@ void benchmark_physics_calculations() {
 			vect v1 = {(double)(i % 1000), (double)((i * 2) % 1000)};
 			vect v2 = {(double)((i * 3) % 1000), (double)((i * 4) % 1000)};
 			
-			pol p1 = v1.topol();
-			pol p2 = v2.topol();
+			pol p1 = v1.to_polar_coordinates();
+			pol p2 = v2.to_polar_coordinates();
 			
-			vect result = p1.tovect();
+			vect result = p1.to_vector_coordinates();
 		}
 		
 		double elapsed = end_benchmark();

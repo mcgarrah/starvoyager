@@ -21,7 +21,7 @@ frag::frag(cord loc,int typ,short spr,short col,ship* trg,ship* own,vect mov,sho
 	self=-1;
 	for(int i=0,j=0;i<50;i++)
 	{
-		j=calc::rnd(ISIZE);
+		j=calc::random_int(ISIZE);
 		if(!frags[j])
 		{
 			self=j;
@@ -156,13 +156,13 @@ void frag::serialize_to_network(int typ,unsigned char* buf)
 		break;
 
 		case SERV_UPD:
-		calc::longtodat(loc.x,buf);
+		calc::longtodat(loc.x_component,buf);
 		buf+=4;
-		calc::longtodat(loc.y,buf);
+		calc::longtodat(loc.y_component,buf);
 		buf+=4;
-		calc::longtodat(mov.xx,buf);
+		calc::longtodat(mov.x_component,buf);
 		buf+=4;
-		calc::longtodat(mov.yy,buf);
+		calc::longtodat(mov.y_component,buf);
 		buf+=4;
 		calc::inttodat(rot*10,buf);
 		buf+=2;
@@ -206,8 +206,8 @@ void frag::physics()
 		}
 	}
 	
-	loc.x+=mov.xx;
-	loc.y+=mov.yy;
+	loc.x_component+=mov.x_component;
+	loc.y_component+=mov.y_component;
 }
 
 void frag::home()
@@ -215,17 +215,17 @@ void frag::home()
 	vect trv; //Target vector
 	pol trp; //Target polar
 
-	trv.xx=((trg->loc.x+trg->mov.xx)-(loc.x+mov.xx));
-	trv.yy=((trg->loc.y+trg->mov.yy)-(loc.y+mov.yy));
-	trp=trv.topol();
+	trv.x_component=((trg->loc.x_component+trg->mov.x_component)-(loc.x_component+mov.x_component));
+	trv.y_component=((trg->loc.y_component+trg->mov.y_component)-(loc.y_component+mov.y_component));
+	trp=trv.to_polar_coordinates();
 
 	//Enforce acceleration restriction
-	if(trp.rad>trck)
-		trp.rad=trck;
+	if(trp.radius>trck)
+		trp.radius=trck;
 
-	trv=trp.tovect();
-	mov.xx+=trv.xx;
-	mov.yy+=trv.yy;
+	trv=trp.to_vector_coordinates();
+	mov.x_component+=trv.x_component;
+	mov.y_component+=trv.y_component;
 }
 
 void frag::save()
@@ -237,10 +237,10 @@ void frag::save()
 		database::putvalue("Target",trg->self);
 	if(own)
 		database::putvalue("Owner",own->self);
-	database::putvalue("XLoc",loc.x);
-	database::putvalue("YLoc",loc.y);
-	database::putvalue("XVect",mov.xx);
-	database::putvalue("YVect",mov.yy);
+	database::putvalue("XLoc",loc.x_component);
+	database::putvalue("YLoc",loc.y_component);
+	database::putvalue("XVect",mov.x_component);
+	database::putvalue("YVect",mov.y_component);
 	database::putvalue("Rotation",rot);
 	database::putvalue("Power",pow);
 	database::putvalue("Tracking",trck);
@@ -254,10 +254,10 @@ void frag::load()
 	col=database::getvalue("Colour");
 	trg=ship::get(database::getvalue("Target"));
 	own=ship::get(database::getvalue("Owner"));
-	loc.x=database::getvalue("XLoc");
-	loc.y=database::getvalue("YLoc");
-	mov.xx=database::getvalue("XVect");
-	mov.yy=database::getvalue("YVect");
+	loc.x_component=database::getvalue("XLoc");
+	loc.y_component=database::getvalue("YLoc");
+	mov.x_component=database::getvalue("XVect");
+	mov.y_component=database::getvalue("YVect");
 	rot=database::getvalue("Rotation");
 	pow=database::getvalue("Power");
 	trck=database::getvalue("Tracking");

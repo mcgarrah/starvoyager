@@ -15,14 +15,14 @@ void test_angle_degree_conversions() {
 		
 		// Test angle normalization
 		pol test_polar;
-		test_polar.ang = 370;
-		test_polar.rad = 100;
+		test_polar.angle_degrees = 370;
+		test_polar.radius = 100;
 		
-		vect test_vector = test_polar.tovect();
-		pol converted_back = test_vector.topol();
+		vect test_vector = test_polar.to_vector_coordinates();
+		pol converted_back = test_vector.to_polar_coordinates();
 		
-		TEST_ASSERT(converted_back.ang >= 0 && converted_back.ang < 360, "angle conversion maintains valid range");
-		TEST_EQUALS_FLOAT(100.0f, (float)converted_back.rad, 0.1f, "radius preserved in conversion");
+		TEST_ASSERT(converted_back.angle_degrees >= 0 && converted_back.angle_degrees < 360, "angle conversion maintains valid range");
+		TEST_EQUALS_FLOAT(100.0f, (float)converted_back.radius, 0.1f, "radius preserved in conversion");
 		
 	} catch (...) {
 		TEST_ASSERT(false, "angle degree conversions work");
@@ -33,15 +33,15 @@ void test_radius_calculations() {
 	try {
 		// Test distance calculation
 		vect v1, v2;
-		v1.xx = 0; v1.yy = 0;
-		v2.xx = 3; v2.yy = 4;
+		v1.x_component = 0; v1.y_component = 0;
+		v2.x_component = 3; v2.y_component = 4;
 		
 		vect diff;
-		diff.xx = v2.xx - v1.xx;
-		diff.yy = v2.yy - v1.yy;
+		diff.x_component = v2.x_component - v1.x_component;
+		diff.y_component = v2.y_component - v1.y_component;
 		
-		pol distance = diff.topol();
-		TEST_EQUALS_FLOAT(5.0f, (float)distance.rad, 0.01f, "radius calculation correct");
+		pol distance = diff.to_polar_coordinates();
+		TEST_EQUALS_FLOAT(5.0f, (float)distance.radius, 0.01f, "radius calculation correct");
 		
 	} catch (...) {
 		TEST_ASSERT(false, "radius calculations work");
@@ -55,8 +55,8 @@ void test_vector_component_operations() {
 		vect v2 = {5, 15};
 		
 		// Test component access
-		TEST_EQUALS_INT(10, (int)v1.xx, "vector x component access");
-		TEST_EQUALS_INT(20, (int)v1.yy, "vector y component access");
+		TEST_EQUALS_INT(10, (int)v1.x_component, "vector x component access");
+		TEST_EQUALS_INT(20, (int)v1.y_component, "vector y component access");
 		
 	} catch (...) {
 		TEST_ASSERT(false, "vector component operations work");
@@ -69,15 +69,15 @@ void test_random_int_generation() {
 		
 		// Test random number generation
 		for (int i = 0; i < 10; i++) {
-			long rnd = calc::rnd(100);
+			long rnd = calc::random_int(100);
 			TEST_ASSERT(rnd >= 0 && rnd < 100, "random number in valid range");
 		}
 		
 		// Test random with different ranges
-		long rnd_small = calc::rnd(10);
+		long rnd_small = calc::random_int(10);
 		TEST_ASSERT(rnd_small >= 0 && rnd_small < 10, "small range random valid");
 		
-		long rnd_large = calc::rnd(1000);
+		long rnd_large = calc::random_int(1000);
 		TEST_ASSERT(rnd_large >= 0 && rnd_large < 1000, "large range random valid");
 		
 	} catch (...) {
@@ -89,19 +89,19 @@ void test_polar_coordinate_conversion() {
 	try {
 		// Test polar to vector conversion (game uses compass convention: 0°=North)
 		pol p;
-		p.ang = 0;   // 0 degrees = North
-		p.rad = 10;
+		p.angle_degrees = 0;   // 0 degrees = North
+		p.radius = 10;
 		
-		vect v = p.tovect();
-		TEST_EQUALS_FLOAT(0.0f, (float)v.xx, 0.1f, "0 degree (North) x component");
-		TEST_EQUALS_FLOAT(-10.0f, (float)v.yy, 0.1f, "0 degree (North) y component");
+		vect v = p.to_vector_coordinates();
+		TEST_EQUALS_FLOAT(0.0f, (float)v.x_component, 0.1f, "0 degree (North) x component");
+		TEST_EQUALS_FLOAT(-10.0f, (float)v.y_component, 0.1f, "0 degree (North) y component");
 		
 		// Test 90 degrees = East
-		p.ang = 90;
-		p.rad = 10;
-		v = p.tovect();
-		TEST_EQUALS_FLOAT(10.0f, (float)v.xx, 0.1f, "90 degree (East) x component");
-		TEST_EQUALS_FLOAT(0.0f, (float)v.yy, 0.1f, "90 degree (East) y component");
+		p.angle_degrees = 90;
+		p.radius = 10;
+		v = p.to_vector_coordinates();
+		TEST_EQUALS_FLOAT(10.0f, (float)v.x_component, 0.1f, "90 degree (East) x component");
+		TEST_EQUALS_FLOAT(0.0f, (float)v.y_component, 0.1f, "90 degree (East) y component");
 		
 	} catch (...) {
 		TEST_ASSERT(false, "polar coordinate conversion works");
@@ -112,18 +112,18 @@ void test_vector_coordinate_conversion() {
 	try {
 		// Test vector to polar conversion (East vector = 90° in game)
 		vect v;
-		v.xx = 10;
-		v.yy = 0;
+		v.x_component = 10;
+		v.y_component = 0;
 		
-		pol p = v.topol();
-		TEST_EQUALS_FLOAT(10.0f, (float)p.rad, 0.1f, "vector magnitude calculation");
-		TEST_EQUALS_FLOAT(90.0f, (float)p.ang, 0.1f, "East vector = 90 degrees");
+		pol p = v.to_polar_coordinates();
+		TEST_EQUALS_FLOAT(10.0f, (float)p.radius, 0.1f, "vector magnitude calculation");
+		TEST_EQUALS_FLOAT(90.0f, (float)p.angle_degrees, 0.1f, "East vector = 90 degrees");
 		
 		// Test diagonal vector (Southeast = 135° in game)
-		v.xx = 10;
-		v.yy = 10;
-		p = v.topol();
-		TEST_EQUALS_FLOAT(135.0f, (float)p.ang, 1.0f, "Southeast diagonal = 135 degrees");
+		v.x_component = 10;
+		v.y_component = 10;
+		p = v.to_polar_coordinates();
+		TEST_EQUALS_FLOAT(135.0f, (float)p.angle_degrees, 1.0f, "Southeast diagonal = 135 degrees");
 		
 	} catch (...) {
 		TEST_ASSERT(false, "vector coordinate conversion works");

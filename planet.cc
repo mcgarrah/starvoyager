@@ -46,13 +46,13 @@ planet::planet(char* nam,cord put,int typ,alliance* all)
 	snprintf(this->nam, sizeof(this->nam), "%s", nam);
 	this->loc=put;
 	this->all=all;
-	rot=calc::rnd(36);
+	rot=calc::random_int(36);
 	if(typ==STAR)
-		spr=slo+calc::rnd(shi-slo+1);
+		spr=slo+calc::random_int(shi-slo+1);
 	if(typ==UNINHABITED)
-		spr=ulo+calc::rnd(uhi-ulo+1);
+		spr=ulo+calc::random_int(uhi-ulo+1);
 	if(typ==INHABITED)
-		spr=ilo+calc::rnd(ihi-ilo+1);
+		spr=ilo+calc::random_int(ihi-ilo+1);
 	this->typ=typ;
 	for(int j=0;j<MAX_EQUIPMENT_SLOTS;j++)
 		sold[j]=all->get_random_equipment();
@@ -96,7 +96,7 @@ planet* planet::pick(alliance* tali)
 {
 	for(int i=0,j=0;i<ISIZE;i++)
 	{
-		j=calc::rnd(ISIZE);
+		j=calc::random_int(ISIZE);
 		if(planets[j] && planets[j]->typ==INHABITED && planets[j]->all==tali)
 			return planets[j];
 	}
@@ -114,7 +114,7 @@ planet* planet::find_allied_planet(alliance* tali)
 {
 	for(int i=0,j=0;i<ISIZE;i++)
 	{
-		j=calc::rnd(ISIZE);
+		j=calc::random_int(ISIZE);
 		if(planets[j] && planets[j]->typ==INHABITED && !(tali->opposes(planets[j]->all)))
 			return planets[j];
 	}
@@ -125,7 +125,7 @@ planet* planet::find_hostile_planet(alliance* tali)
 {
 	for(int i=0,j=0;i<ISIZE;i++)
 	{
-		j=calc::rnd(ISIZE);
+		j=calc::random_int(ISIZE);
 		if(planets[j] && planets[j]->typ!=STAR && tali->opposes(planets[j]->all))
 			return planets[j];
 	}
@@ -140,8 +140,8 @@ bool planet::masslock(cord loc)
 	{
 		if(planets[i] && planets[i]->typ==STAR)
 		{
-			dx=loc.x-planets[i]->loc.x;
-			dy=loc.y-planets[i]->loc.y;
+			dx=loc.x_component-planets[i]->loc.x_component;
+			dy=loc.y_component-planets[i]->loc.y_component;
 			if(dx<MASS_LOCK_DISTANCE && dx>-MASS_LOCK_DISTANCE && dy>-MASS_LOCK_DISTANCE && dy<MASS_LOCK_DISTANCE)
 				return true;
 		}
@@ -185,9 +185,9 @@ void planet::generatename(char* put)
 	const char n3[][16]={"is","ia","ol","ion","on","ath","ur","e","ise","at","","","","","",""};
 	int s1,s2,s3; //Syllable selectors
 
-	s1=calc::rnd(MAX_SYLLABLES);
-	s2=calc::rnd(MAX_SYLLABLES);
-	s3=calc::rnd(MAX_SYLLABLES);
+	s1=calc::random_int(MAX_SYLLABLES);
+	s2=calc::random_int(MAX_SYLLABLES);
+	s3=calc::random_int(MAX_SYLLABLES);
 	sprintf(put,"%s%s%s",n1[s1],n2[s2],n3[s3]);
 }
 
@@ -197,7 +197,7 @@ void planet::shipyards()
 
 	if(ship::has_available_ship_slot())
 	{
-		tpln=planets[calc::rnd(ISIZE)];
+		tpln=planets[calc::random_int(ISIZE)];
 		if(tpln && tpln->typ==INHABITED)
 		{
 			tpln->shipyard();
@@ -378,9 +378,9 @@ void planet::serialize_to_network(int typ,unsigned char* buf)
 		break;
 
 		case SERV_UPD:
-		calc::longtodat(loc.x,buf);
+		calc::longtodat(loc.x_component,buf);
 		buf+=4;
-		calc::longtodat(loc.y,buf);
+		calc::longtodat(loc.y_component,buf);
 		buf+=4;
 		calc::longtodat(0,buf);
 		buf+=4;
@@ -420,8 +420,8 @@ void planet::save()
 	database::putvalue("SpriteRot",rot);
 	if(spr)
 		database::putvalue("Team",all->self);
-	database::putvalue("XLoc",loc.x);
-	database::putvalue("YLoc",loc.y);
+	database::putvalue("XLoc",loc.x_component);
+	database::putvalue("YLoc",loc.y_component);
 	database::putvalue("Type",typ);
 	for(int i=0;i<MAX_EQUIPMENT_SLOTS;i++)
 	{
@@ -441,8 +441,8 @@ void planet::load()
 	spr=database::getvalue("Sprite");
 	rot=database::getvalue("SpriteRot");
 	all=alliance::get(database::getvalue("Team"));
-	loc.x=database::getvalue("XLoc");
-	loc.y=database::getvalue("YLoc");
+	loc.x_component=database::getvalue("XLoc");
+	loc.y_component=database::getvalue("YLoc");
 	typ=database::getvalue("Type");
 	for(int i=0;i<MAX_EQUIPMENT_SLOTS;i++)
 	{
@@ -458,8 +458,8 @@ void planet::shipyard()
 	ship* tshp; //Ship being spawned
 	int aity; //AI type to spawn
 
-	put.x=loc.x+calc::rnd(SPAWN_RADIUS)-calc::rnd(SPAWN_RADIUS);
-	put.y=loc.y+calc::rnd(SPAWN_RADIUS)-calc::rnd(SPAWN_RADIUS);
+	put.x_component=loc.x_component+calc::random_int(SPAWN_RADIUS)-calc::random_int(SPAWN_RADIUS);
+	put.y_component=loc.y_component+calc::random_int(SPAWN_RADIUS)-calc::random_int(SPAWN_RADIUS);
 
 	lshp=all->get_spawn_ship_template();
 	aity=all->get_ai_behavior_type();

@@ -29,8 +29,8 @@ void presence::init()
 	ful=0;
 	srng=0;
 	lrng=0;
-	vel.rad=0;
-	vel.ang=0;
+	vel.radius=0;
+	vel.angle_degrees=0;
 	for(int i=0;i<ISIZE;i++)
 		objs[i]=NULL;
 }
@@ -246,8 +246,8 @@ void presence::drawat(int sx,short sy,short zout)
 	}
 	if(col>=0 && link)
 	{
-		lx=sx-((mov.xx-link->mov.xx)*8*age)/(zout*9);
-		ly=sy-((mov.yy-link->mov.yy)*8*age)/(zout*9);
+		lx=sx-((mov.x_component-link->mov.x_component)*8*age)/(zout*9);
+		ly=sy-((mov.y_component-link->mov.y_component)*8*age)/(zout*9);
 		graphic::line(sx,sy,lx,ly,col);
 		if(zout==1)
 		{
@@ -356,10 +356,10 @@ presence* presence::gettarget(int typ,short dir,box cov,bool out,bool enem)
 	{
 		if(objs[st] && objs[st]!=me && objs[st]->typ==typ) {
 			if(
-			objs[st]->loc.x<cov.x2 &&
-			objs[st]->loc.x>cov.x1 &&		
-			objs[st]->loc.y<cov.y2 &&		
-			objs[st]->loc.y>cov.y1
+			objs[st]->loc.x_component<cov.x2 &&
+			objs[st]->loc.x_component>cov.x1 &&		
+			objs[st]->loc.y_component<cov.y2 &&		
+			objs[st]->loc.y_component>cov.y1
 			)
 			{
 				if(!out && ((objs[st]->enem && enem) || !enem))
@@ -443,15 +443,15 @@ void presence::name(unsigned char* buf)
 void presence::update(unsigned char* buf)
 {
 	buf+=3;
-	loc.x=calc::dattolong(buf);
+	loc.x_component=calc::dattolong(buf);
 	buf+=4;
-	loc.y=calc::dattolong(buf);
-	buf+=4;
-
-	mov.xx=calc::dattolong(buf);
+	loc.y_component=calc::dattolong(buf);
 	buf+=4;
 
-	mov.yy=calc::dattolong(buf);
+	mov.x_component=calc::dattolong(buf);
+	buf+=4;
+
+	mov.y_component=calc::dattolong(buf);
 	buf+=4;
 
 	ang=calc::dattoint(buf);
@@ -468,7 +468,7 @@ void presence::update(unsigned char* buf)
 
 void presence::interpolate()
 {
-	if(!me && (link || (typ==PT_FRAG && calc::rnd(40)==0)))
+	if(!me && (link || (typ==PT_FRAG && calc::random_int(40)==0)))
 	{
 		delete this;
 		return;
@@ -477,11 +477,11 @@ void presence::interpolate()
 	//	return;
 	if(this==me)
 	{
-		vel=mov.topol();
-		vel.ang=ang;
+		vel=mov.to_polar_coordinates();
+		vel.angle_degrees=ang;
 	}
-	loc.x+=mov.xx;
-	loc.y+=mov.yy;
+	loc.x_component+=mov.x_component;
+	loc.y_component+=mov.y_component;
 	age++;
 }
 

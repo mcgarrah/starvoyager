@@ -174,14 +174,14 @@ void test_boundary_condition_errors() {
 		calc::init();
 		
 		// Test random number generation with edge cases
-		long zero_range = calc::rnd(0);
+		long zero_range = calc::random_int(0);
 		TEST_ASSERT(zero_range == 0, "zero range returns zero");
 		
-		long one_range = calc::rnd(1);
+		long one_range = calc::random_int(1);
 		TEST_ASSERT(one_range == 0, "one range returns zero");
 		
 		// Test large range
-		long large_range = calc::rnd(1000000);
+		long large_range = calc::random_int(1000000);
 		TEST_ASSERT(large_range >= 0 && large_range < 1000000, "large range in bounds");
 		
 	} catch (...) {

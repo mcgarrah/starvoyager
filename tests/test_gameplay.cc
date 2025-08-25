@@ -17,15 +17,15 @@ void test_ship_movement() {
 	try {
 		// Test vector calculations for ship movement
 		vect velocity;
-		velocity.xx = 10.0;
-		velocity.yy = 0.0;
+		velocity.x_component = 10.0;
+		velocity.y_component = 0.0;
 		
-		pol polar_vel = velocity.topol();
-		TEST_ASSERT(polar_vel.rad > 9.9 && polar_vel.rad < 10.1, "velocity conversion works");
+		pol polar_vel = velocity.to_polar_coordinates();
+		TEST_ASSERT(polar_vel.radius > 9.9 && polar_vel.radius < 10.1, "velocity conversion works");
 		
 		// Test back conversion
-		vect back_to_vect = polar_vel.tovect();
-		TEST_EQUALS_FLOAT(10.0f, (float)back_to_vect.xx, 0.1f, "velocity round-trip conversion");
+		vect back_to_vect = polar_vel.to_vector_coordinates();
+		TEST_EQUALS_FLOAT(10.0f, (float)back_to_vect.x_component, 0.1f, "velocity round-trip conversion");
 	} catch (...) {
 		TEST_ASSERT(false, "ship movement calculations");
 	}
@@ -35,15 +35,15 @@ void test_collision_detection() {
 	try {
 		// Test basic collision math
 		cord pos1, pos2;
-		pos1.x = 0.0; pos1.y = 0.0;
-		pos2.x = 5.0; pos2.y = 0.0;
+		pos1.x_component = 0.0; pos1.y_component = 0.0;
+		pos2.x_component = 5.0; pos2.y_component = 0.0;
 		
 		vect diff;
-		diff.xx = pos2.x - pos1.x;
-		diff.yy = pos2.y - pos1.y;
+		diff.x_component = pos2.x_component - pos1.x_component;
+		diff.y_component = pos2.y_component - pos1.y_component;
 		
-		pol distance = diff.topol();
-		TEST_EQUALS_FLOAT(5.0f, (float)distance.rad, 0.01f, "collision distance calculation");
+		pol distance = diff.to_polar_coordinates();
+		TEST_EQUALS_FLOAT(5.0f, (float)distance.radius, 0.01f, "collision distance calculation");
 	} catch (...) {
 		TEST_ASSERT(false, "collision detection math");
 	}
@@ -53,15 +53,15 @@ void test_targeting_system() {
 	try {
 		// Test angle calculations for targeting
 		cord shooter, target;
-		shooter.x = 0.0; shooter.y = 0.0;
-		target.x = 1.0; target.y = 1.0;
+		shooter.x_component = 0.0; shooter.y_component = 0.0;
+		target.x_component = 1.0; target.y_component = 1.0;
 		
 		vect aim;
-		aim.xx = target.x - shooter.x;
-		aim.yy = target.y - shooter.y;
+		aim.x_component = target.x_component - shooter.x_component;
+		aim.y_component = target.y_component - shooter.y_component;
 		
-		pol bearing = aim.topol();
-		TEST_ASSERT(bearing.ang >= 0 && bearing.ang < 360, "targeting angle in valid range");
+		pol bearing = aim.to_polar_coordinates();
+		TEST_ASSERT(bearing.angle_degrees >= 0 && bearing.angle_degrees < 360, "targeting angle in valid range");
 	} catch (...) {
 		TEST_ASSERT(false, "targeting system calculations");
 	}

@@ -35,11 +35,11 @@ void test_rotation_angle_calculations() {
 		// Test rotation angle calculations
 		for (int angle = 0; angle < 360; angle += 45) {
 			pol p = {(double)angle, 100.0};
-			vect v = p.tovect();
+			vect v = p.to_vector_coordinates();
 			
 			// Verify conversion doesn't crash and produces reasonable values
-			TEST_ASSERT(v.xx >= -100.1 && v.xx <= 100.1, "rotation x component in range");
-			TEST_ASSERT(v.yy >= -100.1 && v.yy <= 100.1, "rotation y component in range");
+			TEST_ASSERT(v.x_component >= -100.1 && v.x_component <= 100.1, "rotation x component in range");
+			TEST_ASSERT(v.y_component >= -100.1 && v.y_component <= 100.1, "rotation y component in range");
 		}
 		
 	} catch (...) {
@@ -173,8 +173,8 @@ void test_graphics_coordinate_system() {
 		cord test_coord = {100.0, 200.0};
 		
 		// Test coordinate operations
-		TEST_ASSERT(test_coord.x == 100.0, "graphics x coordinate works");
-		TEST_ASSERT(test_coord.y == 200.0, "graphics y coordinate works");
+		TEST_ASSERT(test_coord.x_component == 100.0, "graphics x coordinate works");
+		TEST_ASSERT(test_coord.y_component == 200.0, "graphics y coordinate works");
 		
 	} catch (...) {
 		TEST_ASSERT(false, "graphics coordinate system works");

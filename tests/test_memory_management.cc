@@ -114,7 +114,7 @@ void test_graphics_resource_management() {
 		for (int i = 0; i < 100; i++) {
 			cord test_coord = {(long)i, (long)(i * 2)};
 			vect test_vector = {(double)i, (double)(i * 2)};
-			pol test_polar = test_vector.topol();
+			pol test_polar = test_vector.to_polar_coordinates();
 		}
 		
 		TEST_ASSERT(true, "graphics resource management works");

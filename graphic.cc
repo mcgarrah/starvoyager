@@ -278,8 +278,8 @@ void graphic::draw(int x,short y,short rot,short zout,short haze,bool trg)
 			dst.h=2;
 			for(int i=0;i<haze;i++)
 			{
-				dst.x=x-hw+calc::rnd(hw*2-cloak->w);
-				dst.y=y-hh+calc::rnd(hh*2-cloak->h);
+				dst.x=x-hw+calc::random_int(hw*2-cloak->w);
+				dst.y=y-hh+calc::random_int(hh*2-cloak->h);
 				SDL_BlitSurface(cloak,NULL,screen,&dst);
 			}
 		}

@@ -135,8 +135,8 @@ void player::spawn(alliance* tali)
 	if(tpln)
 	{	
 		spawn_location=tpln->loc;
-		spawn_location.x+=calc::rnd(150)-calc::rnd(150);
-		spawn_location.y+=calc::rnd(150)-calc::rnd(150);
+		spawn_location.x_component+=calc::random_int(150)-calc::random_int(150);
+		spawn_location.y_component+=calc::random_int(150)-calc::random_int(150);
 		if(mshp)
 			delete mshp;
 		if(!(tali->spw))

@@ -29,22 +29,22 @@ class vect;
 class pol //A polar vector
 {
 	public:
-	inline vect tovect(); //Returns conversion to a vect
+	inline vect to_vector_coordinates(); //Returns conversion to a vect
 
-        double ang; //Angle
-	double rad; //Radius
+        double angle_degrees; //Angle
+	double radius; //Radius
 };
 
 class vect //A vector
 {
 	public:
-	inline pol topol(); //Returns conversion to a pol
+	inline pol to_polar_coordinates(); //Returns conversion to a pol
 	
-	double xx;
-	double yy; //X and Y components
+	double x_component;
+	double y_component; //X and Y components
 };
 
-inline vect pol::tovect()
+inline vect pol::to_vector_coordinates()
 {
 	vect out; //Return value
 	double cang; //Converted angle
@@ -52,42 +52,42 @@ inline vect pol::tovect()
 	// COORDINATE SYSTEM: Game uses compass convention (0°=North, 90°=East)
 	// Mathematical convention is (0°=East, 90°=North)
 	// Subtract 90° to convert from game angle to mathematical angle
-	cang=((ang-90)*M_PI)/180;
-	out.xx=rad*cos(cang);
-	out.yy=rad*sin(cang);
+	cang=((angle_degrees-90)*M_PI)/180;
+	out.x_component=radius*cos(cang);
+	out.y_component=radius*sin(cang);
 	return out;
 }
 
-inline pol vect::topol()
+inline pol vect::to_polar_coordinates()
 {
 	pol out; //Return value
 
 	// COORDINATE SYSTEM: Converts Cartesian to compass angles
-	out.rad=sqrt(xx*xx+yy*yy);
-	if(xx!=0)
+	out.radius=sqrt(x_component*x_component+y_component*y_component);
+	if(x_component!=0)
 	{
-		out.ang=atan(yy/xx)*(180/M_PI);
-		if(yy>0)
+		out.angle_degrees=atan(y_component/x_component)*(180/M_PI);
+		if(y_component>0)
 		{
-			if(xx>0)
-				out.ang=90+out.ang;
+			if(x_component>0)
+				out.angle_degrees=90+out.angle_degrees;
 			else
-				out.ang=270+out.ang;
+				out.angle_degrees=270+out.angle_degrees;
 		}
 		else
 		{
-			if(xx>0)
-				out.ang=90+out.ang;
+			if(x_component>0)
+				out.angle_degrees=90+out.angle_degrees;
 			else
-				out.ang=360-(90-out.ang);
+				out.angle_degrees=360-(90-out.angle_degrees);
 		}
 	}
 	else
 	{
-		if(yy>0)
-			out.ang=180; // South (positive Y in compass system)
+		if(y_component>0)
+			out.angle_degrees=180; // South (positive Y in compass system)
 		else
-			out.ang=0;   // North (negative Y in compass system)
+			out.angle_degrees=0;   // North (negative Y in compass system)
 	}
 	return out;
 }
@@ -96,78 +96,78 @@ class ivect;
 class ipol //Integer version of pol
 {
 	public:
-	inline ivect tovect(); //Returns conversion to an ivect
+	inline ivect to_vector_coordinates(); //Returns conversion to an ivect
 
-	int ang;
-	long rad;
+	int angle_degrees;
+	long radius;
 };
 
 class ivect //Integer version of vect
 {
 	public:
-	inline ipol topol(); //Returns conversion to an ipol
+	inline ipol to_polar_coordinates(); //Returns conversion to an ipol
 
-	long xx;
-	long yy;
+	long x_component;
+	long y_component;
 };
 
-inline ivect ipol::tovect()
+inline ivect ipol::to_vector_coordinates()
 {
 	ivect out; //Return value
 	double cang; //Converted angle
 
 	// COORDINATE SYSTEM: Game uses compass convention (0°=North, 90°=East)
 	// Subtract 90° to convert from game angle to mathematical angle
-	cang=(((double)ang-90)*M_PI)/180;
-	out.xx=(long)(rad*cos(cang));
-	out.yy=(long)(rad*sin(cang));
+	cang=(((double)angle_degrees-90)*M_PI)/180;
+	out.x_component=(long)(radius*cos(cang));
+	out.y_component=(long)(radius*sin(cang));
 	return out;
 }
 
-inline ipol ivect::topol()
+inline ipol ivect::to_polar_coordinates()
 {
 	ipol out; //Return value
 
 	// COORDINATE SYSTEM: Converts Cartesian to compass angles (integer version)
-	out.rad=(long)sqrt(xx*xx+yy*yy);
-	if(xx!=0)
+	out.radius=(long)sqrt(x_component*x_component+y_component*y_component);
+	if(x_component!=0)
 	{
-		out.ang=(int)((double)atan(yy/xx)*(180/M_PI));
-		if(yy>0)
+		out.angle_degrees=(int)((double)atan(y_component/x_component)*(180/M_PI));
+		if(y_component>0)
 		{
-			if(xx>0)
-				out.ang=90+out.ang;
+			if(x_component>0)
+				out.angle_degrees=90+out.angle_degrees;
 			else
-				out.ang=270+out.ang;
+				out.angle_degrees=270+out.angle_degrees;
 		}
 		else
 		{
-			if(xx>0)
-				out.ang=90+out.ang;
+			if(x_component>0)
+				out.angle_degrees=90+out.angle_degrees;
 			else
-				out.ang=360-(90-out.ang);
+				out.angle_degrees=360-(90-out.angle_degrees);
 		}
 	}
 	else
 	{
-		if(yy>0)
-			out.ang=180; // South (positive Y in compass system)
+		if(y_component>0)
+			out.angle_degrees=180; // South (positive Y in compass system)
 		else
-			out.ang=0;   // North (negative Y in compass system)
+			out.angle_degrees=0;   // North (negative Y in compass system)
 	}
 	return out;
 }
 
 struct cord //A co-ordinate in the game
 {
-	double x;
-	double y; //X and Y components
+	double x_component;
+	double y_component; //X and Y components
 };
 
 struct icord //Integer version of cord
 {
-	long x;
-	long y;
+	long x_component;
+	long y_component;
 };
 
 
@@ -181,7 +181,7 @@ class calc //Mathematics module
 {
         public:
 		static void init(); //Initialise some calculation data
-        static long rnd(long max); //Return random integer from 0 to max-1
+        static long random_int(long max); //Return random integer from 0 to max-1
         static void getspeed(long spd,char* put); //Convert given game velocity to a string
         inline static long dattolong(unsigned char* in) //Converts a four byte buffer portably into a long
 		{

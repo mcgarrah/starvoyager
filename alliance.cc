@@ -69,8 +69,8 @@ void alliance::maketerritories()
 	{
 		if(alliances[i])
 		{
-			seed.x=calc::rnd(LIMIT/2)-calc::rnd(LIMIT/2);
-			seed.y=calc::rnd(LIMIT/2)-calc::rnd(LIMIT/2);
+			seed.x_component=calc::random_int(LIMIT/2)-calc::random_int(LIMIT/2);
+			seed.y_component=calc::random_int(LIMIT/2)-calc::random_int(LIMIT/2);
 			alliances[i]->maketerritory(seed);
 		}
 	}
@@ -88,7 +88,7 @@ bool alliance::opposes(alliance* all)
 
 equip* alliance::get_random_equipment()
 {
-	return eqps[calc::rnd(16)];
+	return eqps[calc::random_int(16)];
 }
 
 ship* alliance::get_spawn_ship_template()
@@ -106,7 +106,7 @@ ship* alliance::get_spawn_ship_template()
 	}
 	for(int i=0,j=0;i<ship::LIBSIZE*2;i++)
 	{
-		j=calc::rnd(ship::LIBSIZE);
+		j=calc::random_int(ship::LIBSIZE);
 		if(shpc[j]>0)
 			return ship::libget(j);
 	}
@@ -128,7 +128,7 @@ int alliance::get_ai_behavior_type()
 	}
 	for(int i=0,j=0;i<64;i++)
 	{
-		j=calc::rnd(32);
+		j=calc::random_int(32);
 		if(aic[j]>0)
 			return j;
 	}
@@ -157,10 +157,10 @@ void alliance::maketerritory(cord seed) //Generate the star systems for this all
 	for(int i=0;i<nsys;i++)
 	{
 		lsys=seed;
-		lsys.x=seed.x+calc::rnd(LIMIT/5)-calc::rnd(LIMIT/5);
-		lsys.y=seed.y+calc::rnd(LIMIT/5)-calc::rnd(LIMIT/5);
+		lsys.x_component=seed.x_component+calc::random_int(LIMIT/5)-calc::random_int(LIMIT/5);
+		lsys.y_component=seed.y_component+calc::random_int(LIMIT/5)-calc::random_int(LIMIT/5);
 		lpln=lsys;
-		for(int j=0,n=calc::rnd(14)+2;j<n;j++)
+		for(int j=0,n=calc::random_int(14)+2;j<n;j++)
 		{
 			if(j==0)
 			{
@@ -170,7 +170,7 @@ void alliance::maketerritory(cord seed) //Generate the star systems for this all
 			}
 			else
 			{
-				if(calc::rnd(100)<pinh)
+				if(calc::random_int(100)<pinh)
 				{
 					ptyp=planet::INHABITED;
 					planet::generatename(pnam);
@@ -188,8 +188,8 @@ void alliance::maketerritory(cord seed) //Generate the star systems for this all
 			catch(error it)
 			{
 			}
-			lpln.x=lsys.x+calc::rnd(10000)-5000;
-			lpln.y=lsys.y+calc::rnd(10000)-5000;
+			lpln.x_component=lsys.x_component+calc::random_int(10000)-5000;
+			lpln.y_component=lsys.y_component+calc::random_int(10000)-5000;
 		}
 	}
 }

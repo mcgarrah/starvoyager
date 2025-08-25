@@ -30,8 +30,8 @@ ship::ship(cord loc,ship* lshp,alliance* tali,int aity)
 	*this=*lshp;
 	if(strlen(cls) == 0)
 		throw error("Invalid ship template - missing class name");
-	vel.ang=calc::rnd(360);
-	vel.rad=0;
+	vel.angle_degrees=calc::random_int(360);
+	vel.radius=0;
 	this->loc=loc;
 	this->all=tali;
 	mass_locked=true;
@@ -52,7 +52,7 @@ ship::ship()
 	memset(cls, 0, sizeof(cls));
 	memset(slots, 0, sizeof(slots));
 	for(int i=0;i<32;i++)
-		slots[i].pos.rad=-1;
+		slots[i].pos.radius=-1;
 }
 
 ship::~ship()
@@ -238,13 +238,13 @@ void ship::turn(int dir)
 	if(power_plant && power_plant->cap>0)
 	{
 		if(dir==+1)
-			vel.ang+=turn_rate;
+			vel.angle_degrees+=turn_rate;
 		if(dir==-1)
-			vel.ang-=turn_rate;
-		if(vel.ang>=360)
-			vel.ang-=360;
-		if(vel.ang<0)
-			vel.ang+=360;
+			vel.angle_degrees-=turn_rate;
+		if(vel.angle_degrees>=360)
+			vel.angle_degrees-=360;
+		if(vel.angle_degrees<0)
+			vel.angle_degrees+=360;
 	}
 }
 
@@ -253,14 +253,14 @@ void ship::accel(int dir,bool wrp)
 	int pcon; //Power consumption
 	double nsp; //New speed
 	
-	nsp=vel.rad;
+	nsp=vel.radius;
 	//Handle acceleration while at warp
-	if(vel.rad>99)
+	if(vel.radius>99)
 	{
 		if(dir==+1)
-			nsp=vel.rad+warp_acceleration;
+			nsp=vel.radius+warp_acceleration;
 		if(dir==-1)
-			nsp=vel.rad-warp_acceleration;
+			nsp=vel.radius-warp_acceleration;
 		if(nsp<100) {
 			if(wrp)
 				nsp=max_impulse_speed;
@@ -269,16 +269,16 @@ void ship::accel(int dir,bool wrp)
 		}
 	}
 	//Handle acceleration if currently at impulse
-	//if(vel.rad<=mip)
+	//if(vel.radius<=mip)
 	else
 	{
 		if(dir==+1)
 		{
-			nsp=vel.rad+impulse_acceleration;
+			nsp=vel.radius+impulse_acceleration;
 		}
 		if(dir==-1)
 		{
-			nsp=vel.rad-impulse_acceleration;
+			nsp=vel.radius-impulse_acceleration;
 		}
 		if(nsp>max_impulse_speed)
 		{
@@ -297,22 +297,22 @@ void ship::accel(int dir,bool wrp)
 	if(nsp<-(max_impulse_speed/3)) //Prevent going faster backwards than reverse speed
 		nsp=-max_impulse_speed/3;
 
-	if(nsp<0 && !wrp && vel.rad>=0) //Prevent moving into reverse if transition not specified
+	if(nsp<0 && !wrp && vel.radius>=0) //Prevent moving into reverse if transition not specified
 		nsp=0;
 
 	if(nsp>=100)
-		pcon=(int)(((vel.rad-nsp)*mass)/2000);
+		pcon=(int)(((vel.radius-nsp)*mass)/2000);
 	else
-		pcon=(int)(((vel.rad-nsp)*mass)/2);
+		pcon=(int)(((vel.radius-nsp)*mass)/2);
 	if(pcon<0)
 		pcon=-pcon;
-	if((nsp>=100 && vel.rad<100) || (nsp<100 && vel.rad>=100))
+	if((nsp>=100 && vel.radius<100) || (nsp<100 && vel.radius>=100))
 		pcon=0;
 
 	if(power_plant && power_plant->cap>=pcon)
 	{
 		power_plant->cap-=pcon;
-		vel.rad=nsp;
+		vel.radius=nsp;
 	}
 }
 
@@ -338,7 +338,7 @@ void ship::shoot(bool torp)
 
 	if(!see(enem))
 		return;
-	if(vel.rad>=100)
+	if(vel.radius>=100)
 		return;
 	weapon_range=0;
 	for(int i=0;i<32;i++)
@@ -346,10 +346,10 @@ void ship::shoot(bool torp)
 		if(slots[i].item && ((torp && slots[i].item->equipment_type==equip::LAUNCHER) || (!torp && slots[i].item->equipment_type==equip::PHASER)))
 		{
 			launcher_equipment=slots[i].item;
-			vector_to_target.xx=enem->loc.x-loc.x;
-			vector_to_target.yy=enem->loc.y-loc.y;
-			polar_to_target=vector_to_target.topol();
-			distance_to_target=polar_to_target.rad;
+			vector_to_target.x_component=enem->loc.x_component-loc.x_component;
+			vector_to_target.y_component=enem->loc.y_component-loc.y_component;
+			polar_to_target=vector_to_target.to_polar_coordinates();
+			distance_to_target=polar_to_target.radius;
 
 			can=false;
 			if(launcher_equipment->equipment_type==equip::PHASER)
@@ -357,24 +357,24 @@ void ship::shoot(bool torp)
 				weapon_range=launcher_equipment->range*launcher_equipment->trck;
 				if(launcher_equipment->trck)
 				{
-					corr.xx=((enem->mov.xx-mov.xx)*(polar_to_target.rad/launcher_equipment->trck));
-					corr.yy=((enem->mov.yy-mov.yy)*(polar_to_target.rad/launcher_equipment->trck));
-					if(vector_to_target.xx && corr.xx*10/vector_to_target.xx<10)
-						vector_to_target.xx+=corr.xx;
-					if(vector_to_target.yy && corr.yy*10/vector_to_target.yy<10)
-						vector_to_target.yy+=corr.yy;
-					polar_to_target=vector_to_target.topol();
-					polar_to_target.rad=distance_to_target;
+					corr.x_component=((enem->mov.x_component-mov.x_component)*(polar_to_target.radius/launcher_equipment->trck));
+					corr.y_component=((enem->mov.y_component-mov.y_component)*(polar_to_target.radius/launcher_equipment->trck));
+					if(vector_to_target.x_component && corr.x_component*10/vector_to_target.x_component<10)
+						vector_to_target.x_component+=corr.x_component;
+					if(vector_to_target.y_component && corr.y_component*10/vector_to_target.y_component<10)
+						vector_to_target.y_component+=corr.y_component;
+					polar_to_target=vector_to_target.to_polar_coordinates();
+					polar_to_target.radius=distance_to_target;
 				}
 			}
 			if(launcher_equipment->equipment_type==equip::LAUNCHER)
 				weapon_range=((launcher_equipment->range*launcher_equipment->range)/2)*launcher_equipment->trck;
 
-			if(polar_to_target.rad<=weapon_range)
+			if(polar_to_target.radius<=weapon_range)
 				can=true;
 			if(can)
 			{
-				angle_difference=polar_to_target.ang-(vel.ang+slots[i].face);
+				angle_difference=polar_to_target.angle_degrees-(vel.angle_degrees+slots[i].face);
 				if(angle_difference>180)
 					angle_difference=angle_difference-360;
 				if(angle_difference<-180)
@@ -395,37 +395,37 @@ void ship::shoot(bool torp)
 				uncloak();
 				
 				ptmp=slots[i].pos;
-				ptmp.ang=(ptmp.ang+vel.ang);
-				if(ptmp.ang>=360)
-					ptmp.ang-=360;
-				vtmp=ptmp.tovect();
+				ptmp.angle_degrees=(ptmp.angle_degrees+vel.angle_degrees);
+				if(ptmp.angle_degrees>=360)
+					ptmp.angle_degrees-=360;
+				vtmp=ptmp.to_vector_coordinates();
 				
-				emission_location.x=vtmp.xx+loc.x;
-				emission_location.y=vtmp.yy+loc.y;
+				emission_location.x_component=vtmp.x_component+loc.x_component;
+				emission_location.y_component=vtmp.y_component+loc.y_component;
 
 				if(torp)
 				{
-					emission_polar.ang=slots[i].face+vel.ang; //Sort out the angle a torpedo is shot at
-					if(emission_polar.ang>=360)
-						emission_polar.ang-=360;
-					emission_polar.rad=launcher_equipment->trck*2; //and the speed
+					emission_polar.angle_degrees=slots[i].face+vel.angle_degrees; //Sort out the angle a torpedo is shot at
+					if(emission_polar.angle_degrees>=360)
+						emission_polar.angle_degrees-=360;
+					emission_polar.radius=launcher_equipment->trck*2; //and the speed
 				}
 				else
 				{
-					emission_polar.ang=polar_to_target.ang; //velocity of phaser fire emission, towards target at fixed speed for this weapon
-					emission_polar.rad=launcher_equipment->trck;
+					emission_polar.angle_degrees=polar_to_target.angle_degrees; //velocity of phaser fire emission, towards target at fixed speed for this weapon
+					emission_polar.radius=launcher_equipment->trck;
 				}
 
-				emission_vector=emission_polar.tovect();
-				emission_vector.xx+=mov.xx;
-				emission_vector.yy+=mov.yy;
+				emission_vector=emission_polar.to_vector_coordinates();
+				emission_vector.x_component+=mov.x_component;
+				emission_vector.y_component+=mov.y_component;
 
 				if(launcher_equipment->equipment_type==equip::PHASER)
 				{
 					power_plant->cap-=launcher_equipment->power_requirement;
 					try
 					{
-						new frag(emission_location,frag::ENERGY,launcher_equipment->sprite_index,launcher_equipment->color_index,enem,this,emission_vector,((polar_to_target.ang+5)/10),launcher_equipment->power_requirement,0,launcher_equipment->range);
+						new frag(emission_location,frag::ENERGY,launcher_equipment->sprite_index,launcher_equipment->color_index,enem,this,emission_vector,((polar_to_target.angle_degrees+5)/10),launcher_equipment->power_requirement,0,launcher_equipment->range);
 					}
 					catch(error it)
 					{
@@ -463,17 +463,17 @@ bool ship::see(ship* target_ship)
 		weapon_range=sensor_array->item->range;
 	else
 		weapon_range=1000;
-	if(target_ship->vel.rad<20) //Slower ships less visible
-		weapon_range-=(((weapon_range/2)*(20-target_ship->vel.rad))/20);
+	if(target_ship->vel.radius<20) //Slower ships less visible
+		weapon_range-=(((weapon_range/2)*(20-target_ship->vel.radius))/20);
 	if(target_ship->cloaking_device && target_ship->cloaking_device->cap==target_ship->cloaking_device->item->capacity) //Cloaked ships even less visible
 		weapon_range/=8;
-	if((target_ship->loc.x-loc.x)>weapon_range) //Bounds checking
+	if((target_ship->loc.x_component-loc.x_component)>weapon_range) //Bounds checking
 		return false;
-	if((target_ship->loc.x-loc.x)<-weapon_range)
+	if((target_ship->loc.x_component-loc.x_component)<-weapon_range)
 		return false;
-	if((target_ship->loc.y-loc.y)>weapon_range)
+	if((target_ship->loc.y_component-loc.y_component)>weapon_range)
 		return false;
-	if((target_ship->loc.y-loc.y)<-weapon_range)
+	if((target_ship->loc.y_component-loc.y_component)<-weapon_range)
 		return false;
 	return true;
 }
@@ -490,13 +490,13 @@ bool ship::see(planet* target_planet)
 		weapon_range=1000;
 	if(target_planet->typ==planet::STAR) //Can always see stars
 		return true;
-	if((target_planet->loc.x-loc.x)>weapon_range) //Bounds checking
+	if((target_planet->loc.x_component-loc.x_component)>weapon_range) //Bounds checking
 		return false;
-	if((target_planet->loc.x-loc.x)<-weapon_range)
+	if((target_planet->loc.x_component-loc.x_component)<-weapon_range)
 		return false;
-	if((target_planet->loc.y-loc.y)>weapon_range)
+	if((target_planet->loc.y_component-loc.y_component)>weapon_range)
 		return false;
-	if((target_planet->loc.y-loc.y)<-weapon_range)
+	if((target_planet->loc.y_component-loc.y_component)<-weapon_range)
 		return false;
 	return true;		
 }
@@ -513,24 +513,24 @@ bool ship::see(frag* tfrg)
 		weapon_range=1000;
 	if(tfrg->trg==this || tfrg->own==this) //For bandwidth spamming reasons, only see frags when really close unless they concern you
 	{
-		if((tfrg->loc.x-loc.x)>weapon_range)
+		if((tfrg->loc.x_component-loc.x_component)>weapon_range)
 			return false;
-		if((tfrg->loc.x-loc.x)<-weapon_range)
+		if((tfrg->loc.x_component-loc.x_component)<-weapon_range)
 			return false;
-		if((tfrg->loc.y-loc.y)>weapon_range)
+		if((tfrg->loc.y_component-loc.y_component)>weapon_range)
 			return false;
-		if((tfrg->loc.y-loc.y)<-weapon_range)
+		if((tfrg->loc.y_component-loc.y_component)<-weapon_range)
 			return false;
 	}
 	else
 	{
-		if((tfrg->loc.x-loc.x)>500)
+		if((tfrg->loc.x_component-loc.x_component)>500)
 			return false;
-		if((tfrg->loc.x-loc.x)<-500)
+		if((tfrg->loc.x_component-loc.x_component)<-500)
 			return false;
-		if((tfrg->loc.y-loc.y)>500)
+		if((tfrg->loc.y_component-loc.y_component)>500)
 			return false;
-		if((tfrg->loc.y-loc.y)<-500)
+		if((tfrg->loc.y_component-loc.y_component)<-500)
 			return false;
 	}
 	return true;		
@@ -640,7 +640,7 @@ int ship::interact(char* txt,short cmod,short opr,ship* player_ship)
 				}
 				else
 				{
-					if(slots[i].pos.rad>=0)
+					if(slots[i].pos.radius>=0)
 					{
 						if(slots[i].face<=90 || slots[i].face>=270)
 							txt+=sprintf(txt," <Free forward port>\n");
@@ -895,15 +895,15 @@ void ship::serialize_to_network(int typ,unsigned char* buf)
 		break;
 
 		case SERV_UPD:
-		calc::longtodat(loc.x,buf);
+		calc::longtodat(loc.x_component,buf);
 		buf+=4;
-		calc::longtodat(loc.y,buf);
+		calc::longtodat(loc.y_component,buf);
 		buf+=4;
-		calc::longtodat(mov.xx,buf);
+		calc::longtodat(mov.x_component,buf);
 		buf+=4;
-		calc::longtodat(mov.yy,buf);
+		calc::longtodat(mov.y_component,buf);
 		buf+=4;
-		calc::inttodat(vel.ang,buf);
+		calc::inttodat(vel.angle_degrees,buf);
 		buf+=2;
 		*buf=0;
 		buf+=1;
@@ -929,18 +929,18 @@ bool ship::detect_collision(cord fragment_location,vect fragment_velocity)
 	int rot; //Target rotation
 	double x1,y1,x2,y2,xx,yy; //Target bounding box
 
-	rot=(int)(((vel.ang+5)/10))%36;
-	xx=(fragment_velocity.xx-mov.xx)/2;
-	yy=(fragment_velocity.yy-mov.yy)/2;
+	rot=(int)(((vel.angle_degrees+5)/10))%36;
+	xx=(fragment_velocity.x_component-mov.x_component)/2;
+	yy=(fragment_velocity.y_component-mov.y_component)/2;
 	if(xx<0)
 		xx=-xx;
 	if(yy<0)
 		yy=-yy;
-	x1=loc.x-(w[rot]*3)/2-xx;
-	y1=loc.y-(h[rot]*3)/2-yy;
-	x2=loc.x+(w[rot]*3)/2+xx;
-	y2=loc.y+(h[rot]*3)/2+yy;
-	if(fragment_location.x>x1 && fragment_location.x<x2 && fragment_location.y>y1 && fragment_location.y<y2)
+	x1=loc.x_component-(w[rot]*3)/2-xx;
+	y1=loc.y_component-(h[rot]*3)/2-yy;
+	x2=loc.x_component+(w[rot]*3)/2+xx;
+	y2=loc.y_component+(h[rot]*3)/2+yy;
+	if(fragment_location.x_component>x1 && fragment_location.x_component<x2 && fragment_location.y_component>y1 && fragment_location.y_component<y2)
 		return true;
 	else
 		return false;
@@ -954,7 +954,7 @@ void ship::hit(int mag,cord fragment_location,vect fragment_velocity,ship* src)
 	int debris_count; //Number of debris bits
 
 	uncloak();
-	rot=(int)(((vel.ang+5)/10))%36;
+	rot=(int)(((vel.angle_degrees+5)/10))%36;
 	if(shield_generator)
 		shield_generator->cap-=mag;
 	server::registershake(this,mag/100);
@@ -964,7 +964,7 @@ void ship::hit(int mag,cord fragment_location,vect fragment_velocity,ship* src)
 	{
 		try
 		{
-			new frag(fragment_location,frag::DEBRIS,shield_generator->item->sprite_index,-1,NULL,this,mov,calc::rnd(36),0,0,2);
+			new frag(fragment_location,frag::DEBRIS,shield_generator->item->sprite_index,-1,NULL,this,mov,calc::random_int(36),0,0,2);
 		}
 		catch(error it)
 		{
@@ -974,18 +974,18 @@ void ship::hit(int mag,cord fragment_location,vect fragment_velocity,ship* src)
 	{
 		if(shield_generator)
 			shield_generator->cap=0;
-		fragment_location.x=(fragment_location.x+2*loc.x)/3;
-		fragment_location.y=(fragment_location.y+2*loc.y)/3;
+		fragment_location.x_component=(fragment_location.x_component+2*loc.x_component)/3;
+		fragment_location.y_component=(fragment_location.y_component+2*loc.y_component)/3;
 		for(int i=0;i<5;i++)
 		{
 			tmpv=mov;
-			fragment_location.x+=calc::rnd(2)-calc::rnd(2);
-			fragment_location.y+=calc::rnd(2)-calc::rnd(2);
-			tmpv.xx+=calc::rnd(2)-calc::rnd(2);
-			tmpv.yy+=calc::rnd(2)-calc::rnd(2);
+			fragment_location.x_component+=calc::random_int(2)-calc::random_int(2);
+			fragment_location.y_component+=calc::random_int(2)-calc::random_int(2);
+			tmpv.x_component+=calc::random_int(2)-calc::random_int(2);
+			tmpv.y_component+=calc::random_int(2)-calc::random_int(2);
 			try
 			{
-				new frag(fragment_location,frag::DEBRIS,frag::FIRE,-1,NULL,this,tmpv,calc::rnd(36),0,0,calc::rnd(5)+5);
+				new frag(fragment_location,frag::DEBRIS,frag::FIRE,-1,NULL,this,tmpv,calc::random_int(36),0,0,calc::random_int(5)+5);
 			}
 			catch(error it)
 			{
@@ -1007,24 +1007,24 @@ void ship::hit(int mag,cord fragment_location,vect fragment_velocity,ship* src)
 			debris_count=70;
 		for(int i=0;i<debris_count;i++)
 		{	
-			if(i==0 || calc::rnd(5)==0)
+			if(i==0 || calc::random_int(5)==0)
 			{
 				tmpc=loc;
-				tmpc.x+=calc::rnd(2*w[rot])-calc::rnd(2*w[rot]);
-				tmpc.y+=calc::rnd(2*h[rot])-calc::rnd(2*h[rot]);
+				tmpc.x_component+=calc::random_int(2*w[rot])-calc::random_int(2*w[rot]);
+				tmpc.y_component+=calc::random_int(2*h[rot])-calc::random_int(2*h[rot]);
 			}
 			tmpv=mov;
 			try
 			{
-				if(calc::rnd(10)<3)
+				if(calc::random_int(10)<3)
 				{
-					new frag(tmpc,frag::DEBRIS,frag::FIRE,-1,NULL,this,tmpv,calc::rnd(36),0,0,calc::rnd(20)+5);
+					new frag(tmpc,frag::DEBRIS,frag::FIRE,-1,NULL,this,tmpv,calc::random_int(36),0,0,calc::random_int(20)+5);
 				}
 				else
 				{
-					tmpv.xx+=calc::rnd(2)-calc::rnd(2);
-					tmpv.yy+=calc::rnd(2)-calc::rnd(2);
-					new frag(tmpc,frag::DEBRIS,fspr,-1,NULL,this,tmpv,calc::rnd(36),0,0,calc::rnd(20)+5);
+					tmpv.x_component+=calc::random_int(2)-calc::random_int(2);
+					tmpv.y_component+=calc::random_int(2)-calc::random_int(2);
+					new frag(tmpc,frag::DEBRIS,fspr,-1,NULL,this,tmpv,calc::random_int(36),0,0,calc::random_int(20)+5);
 				}
 			}
 			catch(error it)
@@ -1123,7 +1123,7 @@ long ship::purchase(equip* prch,int ripo,bool buy)
 		{
 			if(!slots[i].item)
 			{
-				if((slots[i].pos.rad>=0 && (prch->equipment_type==equip::PHASER || prch->equipment_type==equip::LAUNCHER)) || (slots[i].pos.rad==-1 && prch->equipment_type!=equip::PHASER && prch->equipment_type!=equip::LAUNCHER))
+				if((slots[i].pos.radius>=0 && (prch->equipment_type==equip::PHASER || prch->equipment_type==equip::LAUNCHER)) || (slots[i].pos.radius==-1 && prch->equipment_type!=equip::PHASER && prch->equipment_type!=equip::LAUNCHER))
 				{
 					ply->debit(cost);
 					slots[i].item=prch;
@@ -1143,9 +1143,9 @@ void ship::transport(planet* to)
 	vect vto;
 	pol pto; //Vectors to the target
 
-	vto.xx=to->loc.x-loc.x;
-	vto.yy=to->loc.y-loc.y;
-	pto=vto.topol();
+	vto.x_component=to->loc.x_component-loc.x_component;
+	vto.y_component=to->loc.y_component-loc.y_component;
+	pto=vto.to_polar_coordinates();
 	if(shield_generator && shield_generator->cap>0)
 		throw error("Cannot transport with shields up");
 	if(!power_plant)
@@ -1154,7 +1154,7 @@ void ship::transport(planet* to)
 		throw error("Cannot transport while cloaked");
 	for(int i=0;i<32;i++)
 	{
-		if(slots[i].item && slots[i].item->equipment_type==equip::TRANSPORTER && slots[i].rdy==0 && power_plant->cap>=slots[i].item->power_requirement && slots[i].item->range>=pto.rad)
+		if(slots[i].item && slots[i].item->equipment_type==equip::TRANSPORTER && slots[i].rdy==0 && power_plant->cap>=slots[i].item->power_requirement && slots[i].item->range>=pto.radius)
 		{
 			power_plant->cap-=slots[i].item->power_requirement;
 			slots[i].rdy=slots[i].item->readiness_timer;
@@ -1170,9 +1170,9 @@ void ship::transport(ship* to)
 	vect vto;
 	pol pto; //Vectors to the target
 
-	vto.xx=to->loc.x-loc.x;
-	vto.yy=to->loc.y-loc.y;
-	pto=vto.topol();
+	vto.x_component=to->loc.x_component-loc.x_component;
+	vto.y_component=to->loc.y_component-loc.y_component;
+	pto=vto.to_polar_coordinates();
 	if(shield_generator && shield_generator->cap>0)
 		throw error("Cannot transport with shields up");
 	if(!power_plant)
@@ -1185,7 +1185,7 @@ void ship::transport(ship* to)
 		throw error("Cannot transport through destination's cloak");
 	for(int i=0;i<32;i++)
 	{
-		if(slots[i].item && slots[i].item->equipment_type==equip::TRANSPORTER && slots[i].rdy==0 && power_plant->cap>=slots[i].item->power_requirement && slots[i].item->range>=pto.rad)
+		if(slots[i].item && slots[i].item->equipment_type==equip::TRANSPORTER && slots[i].rdy==0 && power_plant->cap>=slots[i].item->power_requirement && slots[i].item->range>=pto.radius)
 		{
 			power_plant->cap-=slots[i].item->power_requirement;
 			slots[i].rdy=slots[i].item->readiness_timer;
@@ -1214,10 +1214,10 @@ void ship::save()
 	if(all)
 		database::putvalue("Team",all->self);
 	database::putvalue("AIType",aity);
-	database::putvalue("XLoc",loc.x);
-	database::putvalue("YLoc",loc.y);
-	database::putvalue("Heading",vel.ang);
-	database::putvalue("Speed",vel.rad);
+	database::putvalue("XLoc",loc.x_component);
+	database::putvalue("YLoc",loc.y_component);
+	database::putvalue("Heading",vel.angle_degrees);
+	database::putvalue("Speed",vel.radius);
 	database::putvalue("TurnRate",turn_rate);
 	database::putvalue("SublightLimit",max_impulse_speed);
 	database::putvalue("SublightAcceleration",impulse_acceleration*10);
@@ -1236,12 +1236,12 @@ void ship::save()
 	database::putvalue("Crippled",is_crippled);
 	for(int i=0;i<32;i++)
 	{
-		if(slots[i].item || slots[i].pos.rad!=-1)
+		if(slots[i].item || slots[i].pos.radius!=-1)
 		{
 			sprintf(atsc,"Slot%hdAngle",i);
-			database::putvalue(atsc,slots[i].pos.ang);
+			database::putvalue(atsc,slots[i].pos.angle_degrees);
 			sprintf(atsc,"Slot%hdRadius",i);
-			database::putvalue(atsc,slots[i].pos.rad);
+			database::putvalue(atsc,slots[i].pos.radius);
 			sprintf(atsc,"Slot%hdFace",i);
 			database::putvalue(atsc,slots[i].face);
 			sprintf(atsc,"Slot%hdItem",i);
@@ -1270,38 +1270,38 @@ void ship::load()
 	h[0]=database::getvalue("Height");
 	for(int i=1;i<36;i++)
 	{
-		bpol.ang=i*10;
-		bpol.rad=h[0];
-		vct1=bpol.tovect();
-		bpol.ang=(i*10+90)%360;
-		bpol.rad=w[0];
-		vct2=bpol.tovect();
-		if(vct1.xx<0)
-			vct1.xx=-vct1.xx;
-		if(vct2.xx<0)
-			vct2.xx=-vct2.xx;
-		if(vct1.yy<0)
-			vct1.yy=-vct1.yy;
-		if(vct2.yy<0)
-			vct2.yy=-vct2.yy;
-		if(vct1.xx>vct2.xx)
-			w[i]=(int)vct1.xx;
+		bpol.angle_degrees=i*10;
+		bpol.radius=h[0];
+		vct1=bpol.to_vector_coordinates();
+		bpol.angle_degrees=(i*10+90)%360;
+		bpol.radius=w[0];
+		vct2=bpol.to_vector_coordinates();
+		if(vct1.x_component<0)
+			vct1.x_component=-vct1.x_component;
+		if(vct2.x_component<0)
+			vct2.x_component=-vct2.x_component;
+		if(vct1.y_component<0)
+			vct1.y_component=-vct1.y_component;
+		if(vct2.y_component<0)
+			vct2.y_component=-vct2.y_component;
+		if(vct1.x_component>vct2.x_component)
+			w[i]=(int)vct1.x_component;
 		else
-			w[i]=(int)vct2.xx;
-		if(vct1.yy>vct2.yy)
-			h[i]=(int)vct1.yy;
+			w[i]=(int)vct2.x_component;
+		if(vct1.y_component>vct2.y_component)
+			h[i]=(int)vct1.y_component;
 		else
-			h[i]=(int)vct2.yy;
+			h[i]=(int)vct2.y_component;
 	}
 	fspr=database::getvalue("FragSprite");
 	fsnd=database::getvalue("FragSound");
 	dsnd=database::getvalue("DeathSound");
 	all=alliance::get(database::getvalue("Team"));
 	aity=database::getvalue("AIType");
-	loc.x=database::getvalue("XLoc");
-	loc.y=database::getvalue("YLoc");
-	vel.ang=database::getvalue("Heading");
-	vel.rad=database::getvalue("Speed");
+	loc.x_component=database::getvalue("XLoc");
+	loc.y_component=database::getvalue("YLoc");
+	vel.angle_degrees=database::getvalue("Heading");
+	vel.radius=database::getvalue("Speed");
 	turn_rate=database::getvalue("TurnRate");
 	max_impulse_speed=database::getvalue("SublightLimit");
 	impulse_acceleration=(double)database::getvalue("SublightAcceleration")/10;
@@ -1318,8 +1318,8 @@ void ship::load()
 	for(int i=0;i<32;i++)
 	{
 		// Initialize slot to safe defaults
-		slots[i].pos.ang=0;
-		slots[i].pos.rad=-1;
+		slots[i].pos.angle_degrees=0;
+		slots[i].pos.radius=-1;
 		slots[i].face=0;
 		slots[i].item=NULL;
 		slots[i].rdy=0;
@@ -1327,13 +1327,13 @@ void ship::load()
 		
 		try {
 			sprintf(atsc,"Slot%hdAngle",i);
-			slots[i].pos.ang=database::getvalue(atsc);
+			slots[i].pos.angle_degrees=database::getvalue(atsc);
 			sprintf(atsc,"Slot%hdRadius",i);
-			slots[i].pos.rad=database::getvalue(atsc);
+			slots[i].pos.radius=database::getvalue(atsc);
 			sprintf(atsc,"Slot%hdFace",i);
 			slots[i].face=database::getvalue(atsc);
 			if(slots[i].face==-1)
-				slots[i].face=slots[i].pos.ang;
+				slots[i].face=slots[i].pos.angle_degrees;
 			sprintf(atsc,"Slot%hdItem",i);
 			long item_id = database::getvalue(atsc);
 			if(item_id >= 0) {
@@ -1354,8 +1354,8 @@ void ship::load()
 		hull_integrity=max_hull_integrity;
 	ply=NULL;
 
-	mov.xx=0;
-	mov.yy=0;
+	mov.x_component=0;
+	mov.y_component=0;
 
 	frnd=NULL;
 	enem=NULL;
@@ -1418,43 +1418,43 @@ void ship::physics()
 	vect nmov; //New movement vector
 
 	//Slow down vessels at warp under masslock influence
-	if(vel.rad>=100 && mass_locked)
-		vel.rad=max_impulse_speed;
+	if(vel.radius>=100 && mass_locked)
+		vel.radius=max_impulse_speed;
 	//Handle ships in between warp 1 and maximum impulse
-	if(vel.rad<100 && vel.rad>max_impulse_speed)
-		vel.rad=max_impulse_speed;
+	if(vel.radius<100 && vel.radius>max_impulse_speed)
+		vel.radius=max_impulse_speed;
 
 	//Handle ships going beyond the boundaries of the 'universe'; they bounce
-	if(loc.x>LIMIT || loc.x<-LIMIT || loc.y>LIMIT || loc.y<-LIMIT)
+	if(loc.x_component>LIMIT || loc.x_component<-LIMIT || loc.y_component>LIMIT || loc.y_component<-LIMIT)
 	{
-		vel.ang=(vel.ang+180);
-		if(vel.ang>=360)
-			vel.ang-=360;
+		vel.angle_degrees=(vel.angle_degrees+180);
+		if(vel.angle_degrees>=360)
+			vel.angle_degrees-=360;
 	}
-	if(loc.x>LIMIT)
-		loc.x=LIMIT;
-	if(loc.x<-LIMIT)
-		loc.x=-LIMIT;
-	if(loc.y>LIMIT)
-		loc.y=LIMIT;
-	if(loc.y<-LIMIT)
-		loc.y=-LIMIT;
+	if(loc.x_component>LIMIT)
+		loc.x_component=LIMIT;
+	if(loc.x_component<-LIMIT)
+		loc.x_component=-LIMIT;
+	if(loc.y_component>LIMIT)
+		loc.y_component=LIMIT;
+	if(loc.y_component<-LIMIT)
+		loc.y_component=-LIMIT;
 	
-	nmov=vel.tovect();
-	if(vel.rad<100 && (mass/100)!=0)
+	nmov=vel.to_vector_coordinates();
+	if(vel.radius<100 && (mass/100)!=0)
 	{
-		mov.xx+=(nmov.xx-mov.xx)/(mass/100);
-		mov.yy+=(nmov.yy-mov.yy)/(mass/100);
-		//loc.x+=(nmov.xx-mov.xx);
-		//loc.y+=(nmov.yy-mov.yy);
+		mov.x_component+=(nmov.x_component-mov.x_component)/(mass/100);
+		mov.y_component+=(nmov.y_component-mov.y_component)/(mass/100);
+		//loc.x_component+=(nmov.x_component-mov.x_component);
+		//loc.y_component+=(nmov.y_component-mov.y_component);
 	}
 	else
 	{
 		mov=nmov;
 	}
 
-	loc.x+=mov.xx;
-	loc.y+=mov.yy;
+	loc.x_component+=mov.x_component;
+	loc.y_component+=mov.y_component;
 }
 
 
@@ -1465,43 +1465,43 @@ void ship::navigate_to_planet(planet* target_planet)
 	double dd; //Directional difference
 	double tol; //Angular tolerance
 
-	vector_to_target.xx=(self*497)%800-400+target_planet->loc.x-loc.x;
-	vector_to_target.yy=(self*273)%800-400+target_planet->loc.y-loc.y; //Vector to deterministic but arbitrary location near target planet
+	vector_to_target.x_component=(self*497)%800-400+target_planet->loc.x_component-loc.x_component;
+	vector_to_target.y_component=(self*273)%800-400+target_planet->loc.y_component-loc.y_component; //Vector to deterministic but arbitrary location near target planet
 
-	polar_to_target=vector_to_target.topol(); //...make polar
+	polar_to_target=vector_to_target.to_polar_coordinates(); //...make polar
 
-	dd=polar_to_target.ang-vel.ang;
+	dd=polar_to_target.angle_degrees-vel.angle_degrees;
 	if(dd>180)
 		dd=dd-360;
 	if(dd<-180)
 		dd=dd+360; //Evaluate angle between current heading and target bearing
 
 	tol=turn_rate+2;
-	if(vel.rad<=5) 
+	if(vel.radius<=5) 
 		tol=20; //Low speed; not too fussed about fine direction finding
 
-	polar_to_target.rad-=150; //Stand off distance
+	polar_to_target.radius-=150; //Stand off distance
 
-	if(polar_to_target.rad<0) //Don't turn when too close
+	if(polar_to_target.radius<0) //Don't turn when too close
 		dd=0;
 
 	if(dd<tol && dd>-tol) //Don't turn when within angle tolerance
 		dd=0;
 
-	if(dd==0 && polar_to_target.rad>0) //Only accelerate when heading at target
+	if(dd==0 && polar_to_target.radius>0) //Only accelerate when heading at target
 	{
-		if(vel.rad>=100)
+		if(vel.radius>=100)
 		{
-			if(vel.rad<sqrt(2*warp_acceleration*polar_to_target.rad)-warp_acceleration)
+			if(vel.radius<sqrt(2*warp_acceleration*polar_to_target.radius)-warp_acceleration)
 				accel(+1,true);
-			else if(vel.rad>sqrt(2*warp_acceleration*polar_to_target.rad)+warp_acceleration)
+			else if(vel.radius>sqrt(2*warp_acceleration*polar_to_target.radius)+warp_acceleration)
 				accel(-1,true);
 		}
 		else
 		{
-			if(vel.rad<(sqrt(2*impulse_acceleration*polar_to_target.rad)-impulse_acceleration))  //Intended speed is sqrt(2as)
+			if(vel.radius<(sqrt(2*impulse_acceleration*polar_to_target.radius)-impulse_acceleration))  //Intended speed is sqrt(2as)
 				accel(+1,true);
-			else if(vel.rad>(sqrt(3*impulse_acceleration*polar_to_target.rad))+impulse_acceleration)
+			else if(vel.radius>(sqrt(3*impulse_acceleration*polar_to_target.radius))+impulse_acceleration)
 				accel(-1,true);
 		}
 	}
@@ -1520,49 +1520,49 @@ void ship::follow(ship* target_ship)
 	double dd; //Directional difference
 	double tol; //Angular tolerance
 
-	polar_to_target.ang=target_ship->vel.ang+90+(self*29)%180; //Find deterministic formation angle to hold at around target ship
-	polar_to_target.rad=100+(self*17)%((sensor_array ? sensor_array->item->range : 1000)/16); //Deterministic range to hold based on sensor range
-	vector_to_target=polar_to_target.tovect();
+	polar_to_target.angle_degrees=target_ship->vel.angle_degrees+90+(self*29)%180; //Find deterministic formation angle to hold at around target ship
+	polar_to_target.radius=100+(self*17)%((sensor_array ? sensor_array->item->range : 1000)/16); //Deterministic range to hold based on sensor range
+	vector_to_target=polar_to_target.to_vector_coordinates();
 		
-	vector_to_target.xx+=target_ship->loc.x-loc.x;
-	vector_to_target.yy+=target_ship->loc.y-loc.y;
-	polar_to_target=vector_to_target.topol(); //Get polar vector to this formation position
+	vector_to_target.x_component+=target_ship->loc.x_component-loc.x_component;
+	vector_to_target.y_component+=target_ship->loc.y_component-loc.y_component;
+	polar_to_target=vector_to_target.to_polar_coordinates(); //Get polar vector to this formation position
 
-	dd=polar_to_target.ang-vel.ang;
+	dd=polar_to_target.angle_degrees-vel.angle_degrees;
 	if(dd>180)
 		dd=dd-360;
 	if(dd<-180)
 		dd=dd+360; //Evaluate angle between current heading and target bearing
 
 	if(!see(target_ship))
-		polar_to_target.rad-=(sensor_array ? sensor_array->item->range : 1000)/3; //If you can't see the target, stand off a little
+		polar_to_target.radius-=(sensor_array ? sensor_array->item->range : 1000)/3; //If you can't see the target, stand off a little
 
 	tol=turn_rate*2+2;
-	if(vel.rad<=5) 
+	if(vel.radius<=5) 
 		tol=20; //Low speed; not too fussed about fine direction finding
 
-	polar_to_target.rad-=150; //Default stand off
+	polar_to_target.radius-=150; //Default stand off
 
-	if(polar_to_target.rad<0) //Don't turn when too close
+	if(polar_to_target.radius<0) //Don't turn when too close
 		dd=0;
 
 	if(dd<tol && dd>-tol) //Don't turn when within angle tolerance
 		dd=0;
 
-	if(dd==0 && polar_to_target.rad>0) //Only accelerate when heading at target
+	if(dd==0 && polar_to_target.radius>0) //Only accelerate when heading at target
 	{
-		if(vel.rad>=100)
+		if(vel.radius>=100)
 		{
-			if(vel.rad<sqrt(2*warp_acceleration*polar_to_target.rad)-warp_acceleration)
+			if(vel.radius<sqrt(2*warp_acceleration*polar_to_target.radius)-warp_acceleration)
 				accel(+1,true);
-			else if(vel.rad>sqrt(2*warp_acceleration*polar_to_target.rad)+warp_acceleration)
+			else if(vel.radius>sqrt(2*warp_acceleration*polar_to_target.radius)+warp_acceleration)
 				accel(-1,true);
 		}
 		else
 		{
-			if(vel.rad<(sqrt(2*impulse_acceleration*polar_to_target.rad)-2*impulse_acceleration))  //Intended speed is sqrt(2as)
+			if(vel.radius<(sqrt(2*impulse_acceleration*polar_to_target.radius)-2*impulse_acceleration))  //Intended speed is sqrt(2as)
 				accel(+1,true);
-			else if(vel.rad>(sqrt(2*impulse_acceleration*polar_to_target.rad)+2*impulse_acceleration))
+			else if(vel.radius>(sqrt(2*impulse_acceleration*polar_to_target.radius)+2*impulse_acceleration))
 				accel(-1,true);
 		}
 	}
@@ -1582,55 +1582,55 @@ void ship::execute_attack_maneuvers(ship* target_ship,int str)
 	double dd; //Directional difference
 	double tol; //Angular tolerance
 
-	if(!see(target_ship) || vel.rad>=100) //If you can't see or are warp pursuing the target ship, default to the follow method
+	if(!see(target_ship) || vel.radius>=100) //If you can't see or are warp pursuing the target ship, default to the follow method
 	{
 		follow(target_ship);
 		return;
 	}
-	if(str>(200+calc::rnd((self%7)*12)-50)) //Alternate on tailing target from one of two sides
-		polar_to_target.ang=target_ship->vel.ang+45+(str-self*29)%135;
+	if(str>(200+calc::random_int((self%7)*12)-50)) //Alternate on tailing target from one of two sides
+		polar_to_target.angle_degrees=target_ship->vel.angle_degrees+45+(str-self*29)%135;
 	else
-		polar_to_target.ang=target_ship->vel.ang-45-(str+self*29)%135;
-	polar_to_target.rad=100+(self*17)%((str+(sensor_array ? sensor_array->item->range : 1000))/16); //Back off a little depending on sensor range
-	vector_to_target=polar_to_target.tovect();
+		polar_to_target.angle_degrees=target_ship->vel.angle_degrees-45-(str+self*29)%135;
+	polar_to_target.radius=100+(self*17)%((str+(sensor_array ? sensor_array->item->range : 1000))/16); //Back off a little depending on sensor range
+	vector_to_target=polar_to_target.to_vector_coordinates();
 		
-	vector_to_target.xx+=target_ship->loc.x-loc.x;
-	vector_to_target.yy+=target_ship->loc.y-loc.y;
-	polar_to_target=vector_to_target.topol(); //And finally get a polar to the 'formation' position
+	vector_to_target.x_component+=target_ship->loc.x_component-loc.x_component;
+	vector_to_target.y_component+=target_ship->loc.y_component-loc.y_component;
+	polar_to_target=vector_to_target.to_polar_coordinates(); //And finally get a polar to the 'formation' position
 
-	dd=polar_to_target.ang-vel.ang;
+	dd=polar_to_target.angle_degrees-vel.angle_degrees;
 	if(dd>180)
 		dd=dd-360;
 	if(dd<-180)
 		dd=dd+360; //Evaluate angle between current heading and target bearing
 
 	if(!see(target_ship))
-		polar_to_target.rad-=(sensor_array ? sensor_array->item->range : 1000)/3; //If you can't see the target, stand off a little
+		polar_to_target.radius-=(sensor_array ? sensor_array->item->range : 1000)/3; //If you can't see the target, stand off a little
 	tol=turn_rate*2+2;
 
-	if(vel.rad<=5) 
+	if(vel.radius<=5) 
 		tol=20; //Low speed; not too fussed about fine direction finding
 
 	tol+=45; //Widen angle tolerance for close combat flair
 
-	if(polar_to_target.rad<0) //Don't turn when too close
+	if(polar_to_target.radius<0) //Don't turn when too close
 		dd=0;
 
 	if(dd<tol && dd>-tol) //Don't turn when within angle tolerance
 		dd=0;
 
-	if(dd==0 && polar_to_target.rad>0) //Only accelerate when heading at target
+	if(dd==0 && polar_to_target.radius>0) //Only accelerate when heading at target
 	{
-		if(vel.rad>=100)
+		if(vel.radius>=100)
 		{
-			if(polar_to_target.rad && (polar_to_target.rad/vel.rad) && ((vel.rad)/(12*polar_to_target.rad/vel.rad))>=warp_acceleration-30)
+			if(polar_to_target.radius && (polar_to_target.radius/vel.radius) && ((vel.radius)/(12*polar_to_target.radius/vel.radius))>=warp_acceleration-30)
 				accel(-1,true);
 			else
 				accel(+1,true);
 		}
 		else
 		{
-			if(polar_to_target.rad && ((5*vel.rad*vel.rad)/(polar_to_target.rad))>=impulse_acceleration)
+			if(polar_to_target.radius && ((5*vel.radius*vel.radius)/(polar_to_target.radius))>=impulse_acceleration)
 				accel(-1,true);
 			else
 				accel(+1,true);
@@ -1659,7 +1659,7 @@ void ship::maintain()
 			shield_generator->rdy=-1;	
 		if(cloaking_device)
 			cloaking_device->rdy=-1;
-		if(calc::rnd(402)==0)
+		if(calc::random_int(402)==0)
 			hit(1000,loc,mov,NULL);
 	}
 	else
@@ -1727,7 +1727,7 @@ void ship::maintain()
 
 	if(power_plant && power_plant->cap<0)
 		power_plant->cap=0;
-	if((!fuel_tank || (fuel_tank && fuel_tank->cap==0)) && !ply && calc::rnd(100)==0)
+	if((!fuel_tank || (fuel_tank && fuel_tank->cap==0)) && !ply && calc::random_int(100)==0)
 		delete this;
 }
 
@@ -1790,7 +1790,7 @@ void ship::execute_ai_behavior()
 				if(plnt && !see(plnt))
 					enem=NULL;
 			}
-			if(!plnt || plnt->all!=all || vel.rad<=5)
+			if(!plnt || plnt->all!=all || vel.radius<=5)
 			{
 				target_planet=planet::pick(all);
 				if(target_planet && target_planet->typ!=planet::STAR && see(target_planet))
@@ -1812,7 +1812,7 @@ void ship::execute_ai_behavior()
 		{
 			if(plnt)
 				cloak();
-			if(enem && calc::rnd(10)==0)
+			if(enem && calc::random_int(10)==0)
 				enem=NULL;
 			if(!enem)
 			{
@@ -1852,7 +1852,7 @@ void ship::execute_ai_behavior()
 			}
 			else
 				shieldsup();
-			if(!plnt || all->opposes(plnt->all) || vel.rad<=5)
+			if(!plnt || all->opposes(plnt->all) || vel.radius<=5)
 			{
 				target_planet=planet::find_allied_planet(all);
 				if(target_planet && target_planet->typ!=planet::STAR)
@@ -1877,7 +1877,7 @@ void ship::execute_ai_behavior()
 			if(enem)
 			{
 				shieldsup();
-				if(calc::rnd(10)==0)
+				if(calc::random_int(10)==0)
 					enem=NULL;
 			}
 			if(!enem)
@@ -1917,7 +1917,7 @@ void ship::execute_ai_behavior()
 			if(enem)
 			{
 				shieldsup();
-				if(calc::rnd(10)==0)
+				if(calc::random_int(10)==0)
 					enem=NULL;
 			}
 			if(!enem) {
@@ -1948,7 +1948,7 @@ ship* ship::find_hostile_target()
 {
         for(int i=0,j=0;i<ISIZE;i++)
         {
-                j=calc::rnd(ISIZE);
+                j=calc::random_int(ISIZE);
                 if(ships[j] && ships[j]!=this && all->opposes(ships[j]->all) && see(ships[j]))
                         return ships[j];
         }
@@ -1959,7 +1959,7 @@ ship* ship::find_allied_ship()
 {
         for(int i=0,j=0;i<ISIZE;i++)
         {
-                j=calc::rnd(ISIZE);
+                j=calc::random_int(ISIZE);
                 if(ships[j] && ships[j]!=this && !ships[j]->ply && all==ships[j]->all && see(ships[j]))
                         return ships[j];
         }

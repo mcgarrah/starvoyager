@@ -18,8 +18,8 @@
 #include "error.h"
 #include "camera.h"
 
-#define x2screen(rx) (long)cx+(rx-pov.x)/vzm
-#define y2screen(ry) (long)cy+(ry-pov.y)/vzm
+#define x2screen(rx) (long)cx+(rx-pov.x_component)/vzm
+#define y2screen(ry) (long)cy+(ry-pov.y_component)/vzm
 
 void camera::init()
 {
@@ -27,8 +27,8 @@ void camera::init()
 	on=false;
 	for(int i=0;i<64;i++)
 	{
-		strs[i].loc.x=-1;
-		strs[i].loc.y=-1;
+		strs[i].loc.x_component=-1;
+		strs[i].loc.y_component=-1;
 		strs[i].dep=1;
 	}
 	vzm=1;
@@ -85,15 +85,15 @@ void camera::update()
 	if(shak)
 	{
 		shak--;
-		pov.x+=calc::rnd(shak*2)-shak;
-		pov.y+=calc::rnd(shak*2)-shak;
+		pov.x_component+=calc::random_int(shak*2)-shak;
+		pov.y_component+=calc::random_int(shak*2)-shak;
 	}
 
 	//Update covered universe area
-	cov.x1=pov.x-rzm;
-	cov.x2=pov.x+rzm;
-	cov.y1=pov.y-rzm;
-	cov.y2=pov.y+rzm;
+	cov.x1=pov.x_component-rzm;
+	cov.x2=pov.x_component+rzm;
+	cov.y1=pov.y_component-rzm;
+	cov.y2=pov.y_component+rzm;
 }
 
 void camera::noise(sound* snd,presence* src)
@@ -101,13 +101,13 @@ void camera::noise(sound* snd,presence* src)
 	vect ssrc; //Sound source vector
 	double dis; //Rough distance from PoV
 
-	ssrc.xx=src->loc.x-pov.x;
-	ssrc.yy=src->loc.y-pov.y;
-	if(ssrc.xx<0)
-		ssrc.xx=-ssrc.xx;
-	if(ssrc.yy<0)
-		ssrc.yy=-ssrc.yy;
-	dis=ssrc.xx+ssrc.yy;
+	ssrc.x_component=src->loc.x_component-pov.x_component;
+	ssrc.y_component=src->loc.y_component-pov.y_component;
+	if(ssrc.x_component<0)
+		ssrc.x_component=-ssrc.x_component;
+	if(ssrc.y_component<0)
+		ssrc.y_component=-ssrc.y_component;
+	dis=ssrc.x_component+ssrc.y_component;
 	if(dis<600)
 	{
 		snd->play(1);
@@ -153,8 +153,8 @@ void camera::viewzoom()
 		vzm=1;
 	for(int i=0;i<64;i++)
 	{
-		strs[i].loc.x=-1;
-		strs[i].loc.y=-1;
+		strs[i].loc.x_component=-1;
+		strs[i].loc.y_component=-1;
 		strs[i].dep=1;
 	}
 }
@@ -180,8 +180,8 @@ void camera::rendermainview()
 			tprs=presence::get(j);
 			if(tprs && tprs->typ==i)
 			{
-				sx=(long)x2screen(tprs->loc.x);
-				sy=(long)y2screen(tprs->loc.y);
+				sx=(long)x2screen(tprs->loc.x_component);
+				sy=(long)y2screen(tprs->loc.y_component);
 				if(sx>interface::viewb.x-100 && sx<interface::viewb.x+interface::viewb.w+100 && sy>interface::viewb.y-100 && sy<interface::viewb.y+interface::viewb.h+100)
 					tprs->drawat(sx,sy,vzm);
 						
@@ -191,20 +191,20 @@ void camera::rendermainview()
 
 	if(presence::trg)
 	{
-		vptr.xx=presence::trg->loc.x-pov.x;
-		vptr.yy=presence::trg->loc.y-pov.y;
-		pptr=vptr.topol();
-		if(pptr.rad>(interface::viewb.w/5)*vzm)
+		vptr.x_component=presence::trg->loc.x_component-pov.x_component;
+		vptr.y_component=presence::trg->loc.y_component-pov.y_component;
+		pptr=vptr.to_polar_coordinates();
+		if(pptr.radius>(interface::viewb.w/5)*vzm)
 		{
-			sprintf(txt,"%ld",(long)pptr.rad/100);
-			pptr.rad=interface::viewb.w/2-50;
-			vptr=pptr.tovect();
-			vptr.xx+=interface::viewb.x+interface::viewb.w/2;
-			vptr.yy+=interface::viewb.y+interface::viewb.h/2;
+			sprintf(txt,"%ld",(long)pptr.radius/100);
+			pptr.radius=interface::viewb.w/2-50;
+			vptr=pptr.to_vector_coordinates();
+			vptr.x_component+=interface::viewb.x+interface::viewb.w/2;
+			vptr.y_component+=interface::viewb.y+interface::viewb.h/2;
 			ptr=graphic::get(graphic::NAV);
 			if(ptr)
-				ptr->draw(vptr.xx,vptr.yy,(((int)pptr.ang+5)/10)%36,1,0,false);
-			graphic::string(txt,vptr.xx,vptr.yy+4,false);
+				ptr->draw(vptr.x_component,vptr.y_component,(((int)pptr.angle_degrees+5)/10)%36,1,0,false);
+			graphic::string(txt,vptr.x_component,vptr.y_component+4,false);
 		}
 	}
 }
@@ -220,7 +220,7 @@ void camera::renderstars()
 	cx=interface::viewb.x+(interface::viewb.w/2);
 	cy=interface::viewb.y+(interface::viewb.h/2);
 	//If we appear to be travelling at warp speed, get the appropriate graphic
-	if(presence::vel.rad>99)
+	if(presence::vel.radius>99)
 		warp=graphic::get(graphic::WARP);
 	//Iterate through the background stars
 	for(int i=0;i<64;i++)
@@ -229,27 +229,27 @@ void camera::renderstars()
 		if(!warp && strs[i].dep>10)
 			strs[i].dep=1;
 		//Calculate the actual screen position
-		astx=(short)(strs[i].loc.x+(cx-pov.x)/(vzm*strs[i].dep));
-		asty=(short)(strs[i].loc.y+(cy-pov.y)/(vzm*strs[i].dep));
+		astx=(short)(strs[i].loc.x_component+(cx-pov.x_component)/(vzm*strs[i].dep));
+		asty=(short)(strs[i].loc.y_component+(cy-pov.y_component)/(vzm*strs[i].dep));
 		//If a star is outside of view, make another
 		if(astx<interface::viewb.x || astx>interface::viewb.x+interface::viewb.w || asty<interface::viewb.y || asty>interface::viewb.y+interface::viewb.h)
 		{
-			astx=interface::viewb.x+calc::rnd(interface::viewb.w);
-			asty=interface::viewb.y+calc::rnd(interface::viewb.h);
+			astx=interface::viewb.x+calc::random_int(interface::viewb.w);
+			asty=interface::viewb.y+calc::random_int(interface::viewb.h);
 
 			if(warp)
-				strs[i].dep=calc::rnd(140)+60;
+				strs[i].dep=calc::random_int(140)+60;
 			else
-				strs[i].dep=calc::rnd(10)+1;
+				strs[i].dep=calc::random_int(10)+1;
 
 			//Calculate the 'real' location from generated screen position
-			strs[i].loc.x=astx-(interface::viewb.x+interface::viewb.w/2-pov.x)/(vzm*strs[i].dep);
-			strs[i].loc.y=asty-(interface::viewb.y+interface::viewb.h/2-pov.y)/(vzm*strs[i].dep);
+			strs[i].loc.x_component=astx-(interface::viewb.x+interface::viewb.w/2-pov.x_component)/(vzm*strs[i].dep);
+			strs[i].loc.y_component=asty-(interface::viewb.y+interface::viewb.h/2-pov.y_component)/(vzm*strs[i].dep);
 		}
 		//Draw the star
 		if(warp)
 		{
-			warp->draw(astx,asty,((presence::vel.ang+5)/10)%36,1,0,false);
+			warp->draw(astx,asty,((presence::vel.angle_degrees+5)/10)%36,1,0,false);
 		}
 		else
 		{
@@ -277,7 +277,7 @@ void camera::renderradar()
 	{
 		for(long x=(long)cov.x1/2000,l=(long)cov.x2/2000;x<=l;x++)
 		{
-			tbox.x=(int)((((x*2000)-pov.x)*(interface::radarb.w/2))/(cov.x2-pov.x)+interface::radarb.x+interface::radarb.w/2);
+			tbox.x=(int)((((x*2000)-pov.x_component)*(interface::radarb.w/2))/(cov.x2-pov.x_component)+interface::radarb.x+interface::radarb.w/2);
 			tbox.y=interface::radarb.y+interface::radarb.h-2;
 			tbox.w=1;
 			tbox.h=3;
@@ -285,7 +285,7 @@ void camera::renderradar()
 		}
 		for(long y=(long)cov.y1/2000,l=(long)cov.y2/2000;y<=l;y++)
 		{
-			tbox.y=(int)((((y*2000)-pov.y)*(interface::radarb.h/2))/(cov.y2-pov.y)+interface::radarb.y+interface::radarb.h/2);
+			tbox.y=(int)((((y*2000)-pov.y_component)*(interface::radarb.h/2))/(cov.y2-pov.y_component)+interface::radarb.y+interface::radarb.h/2);
 			tbox.x=interface::radarb.x+interface::radarb.w-2;
 			tbox.w=3;
 			tbox.h=1;
@@ -293,7 +293,7 @@ void camera::renderradar()
 		}
 	}
 
-	if(cov.x2-pov.x>presence::srng)
+	if(cov.x2-pov.x_component>presence::srng)
 	{
 		tbox.x=(-presence::srng)/((cov.x2-cov.x1)/(long)interface::radarb.w)+interface::radarb.x+interface::radarb.w/2;
 		tbox.y=(-presence::srng)/((cov.y2-cov.y1)/(long)interface::radarb.h)+interface::radarb.y+interface::radarb.h/2;
@@ -310,9 +310,9 @@ void camera::renderradar()
 		tprs=presence::get(i);
 		if(tprs)
 		{
-			sx=(tprs->loc.x-pov.x)/((cov.x2-cov.x1)/(long)interface::radarb.w)+interface::radarb.x+interface::radarb.w/2;
-			sy=(tprs->loc.y-pov.y)/((cov.y2-cov.y1)/(long)interface::radarb.h)+interface::radarb.y+interface::radarb.h/2;
-			if(tprs->loc.x>cov.x1 && tprs->loc.x<cov.x2 && tprs->loc.y>cov.y1 && tprs->loc.y<cov.y2)
+			sx=(tprs->loc.x_component-pov.x_component)/((cov.x2-cov.x1)/(long)interface::radarb.w)+interface::radarb.x+interface::radarb.w/2;
+			sy=(tprs->loc.y_component-pov.y_component)/((cov.y2-cov.y1)/(long)interface::radarb.h)+interface::radarb.y+interface::radarb.h/2;
+			if(tprs->loc.x_component>cov.x1 && tprs->loc.x_component<cov.x2 && tprs->loc.y_component>cov.y1 && tprs->loc.y_component<cov.y2)
 			{
 				if(tprs==presence::me)
 				{
@@ -344,12 +344,12 @@ void camera::renderradar()
 
 				if(tprs->typ==PT_SHIP)
 				{
-					pdir=tprs->mov.topol();
-					if(pdir.rad!=0)
+					pdir=tprs->mov.to_polar_coordinates();
+					if(pdir.radius!=0)
 					{
-						vdir.xx=(tprs->mov.xx*7)/pdir.rad;
-						vdir.yy=(tprs->mov.yy*7)/pdir.rad;
-						graphic::line(sx,sy,sx+vdir.xx,sy+vdir.yy,graphic::BLUE);
+						vdir.x_component=(tprs->mov.x_component*7)/pdir.radius;
+						vdir.y_component=(tprs->mov.y_component*7)/pdir.radius;
+						graphic::line(sx,sy,sx+vdir.x_component,sy+vdir.y_component,graphic::BLUE);
 					}
 				}
 				if(tprs==presence::trg || tprs==presence::hl)
@@ -376,9 +376,9 @@ void camera::renderradar()
 		graphic::string(presence::trg->nam,interface::radarb.x+1,interface::radarb.y+interface::radarb.h-13,false);
 		graphic::string(presence::trg->anno,interface::radarb.x+1,interface::radarb.y+interface::radarb.h-6,false);
 	}
-	snprintf(txt,sizeof(txt),"%ld , %ld",(long)pov.x/100,(long)pov.y/100);
+	snprintf(txt,sizeof(txt),"%ld , %ld",(long)pov.x_component/100,(long)pov.y_component/100);
 	graphic::string(txt,interface::radarb.x,interface::radarb.y,false);
-	calc::getspeed(presence::vel.rad,txt);
+	calc::getspeed(presence::vel.radius,txt);
 	graphic::string(txt,interface::radarb.x+interface::radarb.w-6*strlen(txt)-2,interface::radarb.y,false);
 }
 

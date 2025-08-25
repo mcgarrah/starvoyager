@@ -15,17 +15,17 @@
 void test_calc_functions() {
 	// Test vector distance calculation
 	vect v1, v2;
-	v1.xx = 0; v1.yy = 0;
-	v2.xx = 3; v2.yy = 4;
+	v1.x_component = 0; v1.y_component = 0;
+	v2.x_component = 3; v2.y_component = 4;
 	vect diff;
-	diff.xx = v2.xx - v1.xx;
-	diff.yy = v2.yy - v1.yy;
-	pol p = diff.topol();
-	TEST_EQUALS_FLOAT(5.0f, (float)p.rad, 0.01f, "vector distance calculation");
+	diff.x_component = v2.x_component - v1.x_component;
+	diff.y_component = v2.y_component - v1.y_component;
+	pol p = diff.to_polar_coordinates();
+	TEST_EQUALS_FLOAT(5.0f, (float)p.radius, 0.01f, "vector distance calculation");
 	
 	// Test random number generation
-	long rnd = calc::rnd(100);
-	TEST_ASSERT(rnd >= 0 && rnd < 100, "calc::rnd range test");
+	long rnd = calc::random_int(100);
+	TEST_ASSERT(rnd >= 0 && rnd < 100, "calc::random_int range test");
 }
 
 void test_ship_initialization() {

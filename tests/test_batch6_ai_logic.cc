@@ -271,7 +271,7 @@ void test_ai_navigation_accuracy() {
 			test_ship->aity = ship::AI_AUTOPILOT;
 			test_ship->plnt = nullptr; // No target planet
 			cord original_loc = test_ship->loc;
-			TEST_ASSERT(test_ship->loc.x == original_loc.x, "AI navigation accuracy works");
+			TEST_ASSERT(test_ship->loc.x_component == original_loc.x_component, "AI navigation accuracy works");
 			TestShipFactory::cleanup_test_ship(test_ship);
 		} else {
 			TEST_ASSERT(true, "AI navigation test skipped (no test ship)");
