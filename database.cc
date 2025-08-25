@@ -15,7 +15,7 @@ void database::init()
 {
 	for(int i=0;i<1024;i++)
 		bcks[i]=NULL;
-	ostr=NULL;
+	output_string=NULL;
 	ostk=NULL;
 	owrt=NULL;
 }
@@ -25,23 +25,23 @@ void database::openreader(FILE* dbf)
 	long pos; //Current position in file
 	int lr; //Length read from file
 	char* fnd; //String finding pointer
-	FILE* strm; //Open filestream
+	FILE* file_stream; //Open filestream
 	char onam[65]; //Object name found
 	long opos; //Object position found
 	char tmp[2049]; //Temporary reading buffer
 	reader* rstk; //Reader to put on the stack
 
-	strm=dbf;
-	if(!strm)
+	file_stream=dbf;
+	if(!file_stream)
 		throw error("Error opening reader");
 
 	tmp[0]='\0';
-	lr=fread(tmp,1,strlen(MAGIC),strm);
+	lr=fread(tmp,1,strlen(MAGIC),file_stream);
 	tmp[lr]='\0';
 	if(strcmp(tmp,MAGIC)!=0)
 		throw error("File is corrupt, or incompatible with this version");
 	rstk=new reader;
-	rstk->strm=strm;
+	rstk->file_stream=file_stream;
 	rstk->next=NULL;
 	if(ostk)
 		rstk->next=ostk;
@@ -50,38 +50,38 @@ void database::openreader(FILE* dbf)
 	opos=-1;
 	while(lr>1)
 	{
-		pos=ftell(strm);
-		lr=fread(tmp,1,256,strm);
+		pos=ftell(file_stream);
+		lr=fread(tmp,1,256,file_stream);
 		tmp[lr]='\0';
 		if(tmp[0]=='\n' && tmp[1]=='@')
 		{
 			pos++;
-			fseek(strm,pos,SEEK_SET);
-			lr=fread(tmp,1,66,strm);
+			fseek(file_stream,pos,SEEK_SET);
+			lr=fread(tmp,1,66,file_stream);
 			tmp[lr]='\0';
 			fnd=strstr(tmp,"\n");
 			if(fnd)
 			{
 				if(opos!=-1)
-					submitobj(strm,onam,opos,pos-opos);
+					submitobj(file_stream,onam,opos,pos-opos);
 				*fnd='\0';
 				strncpy(onam,tmp+1,sizeof(onam)-1);
 				onam[sizeof(onam)-1]='\0';
 				opos=pos;
 			}
-			fseek(strm,pos,SEEK_SET);
+			fseek(file_stream,pos,SEEK_SET);
 		}
 		else
 		{
 			fnd=strstr(tmp,"\n@");
 			if(fnd)
-				fseek(strm,fnd-tmp+pos,SEEK_SET);
+				fseek(file_stream,fnd-tmp+pos,SEEK_SET);
 			else
-				fseek(strm,-1,SEEK_CUR);
+				fseek(file_stream,-1,SEEK_CUR);
 		}
 	}
 	if(opos!=-1)
-		submitobj(strm,onam,opos,ftell(strm)-opos);
+		submitobj(file_stream,onam,opos,ftell(file_stream)-opos);
 }
 
 void database::openwriter(FILE* dbf) //Open a writer into the file at the given path
@@ -95,7 +95,7 @@ void database::openwriter(FILE* dbf) //Open a writer into the file at the given 
 
 void database::closereader() //Close the last opened reader
 {
-	FILE* strm; //Stream to close
+	FILE* file_stream; //Stream to close
 	reader* del; //Reader to delete
 	obj* curr;
 	obj* next; //Objects to inspect
@@ -103,8 +103,8 @@ void database::closereader() //Close the last opened reader
 	if(ostk)
 	{
 		del=ostk;
-		strm=del->strm;
-		fclose(strm);
+		file_stream=del->file_stream;
+		fclose(file_stream);
 		ostk=del->next;
 		delete del;
 		for(int i=0;i<1024;i++)
@@ -112,7 +112,7 @@ void database::closereader() //Close the last opened reader
 			curr=bcks[i];
 			while(curr)
 			{
-				if(curr->strm==strm)
+				if(curr->file_stream==file_stream)
 				{
 					if(curr->next)
 						curr->next->prev=curr->prev;
@@ -141,29 +141,29 @@ void database::closewriter()
 	}
 }
 
-void database::switchobj(const char* nam)
+void database::select_database_object(const char* nam)
 {
-	obj* got; //Object got from database
+	obj* file_handle; //Object file_handle from database
 
-	got=locateobj(nam);
-	if(got)
+	file_handle=locateobj(nam);
+	if(file_handle)
 	{
-		if(ostr)
-			delete[] ostr;
-		ostr=new char[got->len+1];
-		fseek(got->strm,got->pos,SEEK_SET);
-		ostr[fread(ostr,1,got->len,got->strm)]='\0';
+		if(output_string)
+			delete[] output_string;
+		output_string=new char[file_handle->len+1];
+		fseek(file_handle->file_stream,file_handle->pos,SEEK_SET);
+		output_string[fread(output_string,1,file_handle->len,file_handle->file_stream)]='\0';
 	}
 	else
 	{
-		if(ostr)
-			delete[] ostr;
-		ostr=NULL;
+		if(output_string)
+			delete[] output_string;
+		output_string=NULL;
 		throw error("Object not found in database");
 	}
 }
 
-char* database::getvalue(const char* key,char* val)
+char* database::retrieve_attribute(const char* key,char* val)
 {
 	char srch[68]; //Key statement to search for	
 	char* fnd; //Pointer to found string
@@ -174,14 +174,14 @@ char* database::getvalue(const char* key,char* val)
 	lk=strlen(key);
 	if(lk>64)
 		return NULL;
-	if(ostr)
+	if(output_string)
 	{
 		sprintf(srch,"\n%s =",key);
-		fnd=strstr(ostr,srch);
+		fnd=strstr(output_string,srch);
 		if(!fnd)
 		{
 			sprintf(srch,"\n%s=",key);
-			fnd=strstr(ostr,srch);
+			fnd=strstr(output_string,srch);
 		}
 		if(fnd)
 		{
@@ -204,12 +204,12 @@ char* database::getvalue(const char* key,char* val)
 	return out;
 }
 
-long database::getvalue(const char* key)
+long database::retrieve_attribute(const char* key)
 {
 	char val[65]; //String representation
 	long out; //Value to output
 
-	getvalue(key,val);
+	retrieve_attribute(key,val);
 	out=-1;
 	sscanf(val,"%ld",&out);
 	return out;
@@ -221,19 +221,19 @@ void database::putobject(const char* nam)
 		fprintf(owrt,"@%s\n",nam);
 }
 
-void database::putvalue(const char* key,const char* val)
+void database::store_attribute(const char* key,const char* val)
 {
 	if(owrt)
 		fprintf(owrt,"%s=%s\n",key,val);
 }
 
-void database::putvalue(const char* key,long val)
+void database::store_attribute(const char* key,long val)
 {
 	if(owrt)
 		fprintf(owrt,"%s=%ld\n",key,val);
 }
 
-void database::submitobj(FILE* strm,const char* nam,long pos,long len)
+void database::submitobj(FILE* file_stream,const char* nam,long pos,long len)
 {
 	int hash; //Hash of name
 	obj* next; //Next bucket in chain to remember
@@ -246,7 +246,7 @@ void database::submitobj(FILE* strm,const char* nam,long pos,long len)
 	bcks[hash]=new obj;
 	bcks[hash]->nam=new char[strlen(nam)+1];
 	sprintf(bcks[hash]->nam,"%s",nam);
-	bcks[hash]->strm=strm;
+	bcks[hash]->file_stream=file_stream;
 	bcks[hash]->pos=pos;
 	bcks[hash]->len=len;
 	bcks[hash]->next=next;
@@ -282,6 +282,6 @@ int database::hashstring(const char* str)
 }
 
 obj* database::bcks[1024];
-char* database::ostr;
+char* database::output_string;
 reader* database::ostk;
 FILE* database::owrt;

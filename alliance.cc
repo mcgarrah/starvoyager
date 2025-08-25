@@ -31,7 +31,7 @@ void alliance::loadlib()
 		sprintf(nam,"Alliance%hd",i);
 		try
 		{
-			database::switchobj(nam);
+			database::select_database_object(nam);
 			alliances[i]=new alliance(i);
 			alliances[i]->load();
 		}
@@ -198,27 +198,27 @@ void alliance::load()
 {
 	char atsc[33]; //Attribute scratchpad
 
-	database::getvalue("Name",nam);
-	grp=database::getvalue("Group");
-	nsys=database::getvalue("Systems");
-	pinh=database::getvalue("PercentInhabited");
-	ripo=database::getvalue("Ripoff");
-	trad=database::getvalue("Trading");
-	spw=ship::libget(database::getvalue("Spawn"));
+	database::retrieve_attribute("Name",nam);
+	grp=database::retrieve_attribute("Group");
+	nsys=database::retrieve_attribute("Systems");
+	pinh=database::retrieve_attribute("PercentInhabited");
+	ripo=database::retrieve_attribute("Ripoff");
+	trad=database::retrieve_attribute("Trading");
+	spw=ship::libget(database::retrieve_attribute("Spawn"));
 	for(int i=0;i<ship::LIBSIZE;i++)
 	{
 		sprintf(atsc,"ShipQuota%hd",i);
-		shpq[i]=database::getvalue(atsc);
+		shpq[i]=database::retrieve_attribute(atsc);
 	}
 	for(int i=0;i<32;i++)
 	{
 		sprintf(atsc,"AIQuota%hd",i);
-		aiq[i]=database::getvalue(atsc);
+		aiq[i]=database::retrieve_attribute(atsc);
 	}
 	for(int i=0;i<16;i++)
 	{
 		sprintf(atsc,"Equipment%hd",i);
-		eqps[i]=equip::get(database::getvalue(atsc));
+		eqps[i]=equip::get(database::retrieve_attribute(atsc));
 	}
 }
 

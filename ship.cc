@@ -96,7 +96,7 @@ void ship::loadlib()
 			try
 			{
 				sprintf(obnm,"ShipLib%hd",i);
-				database::switchobj(obnm);
+				database::select_database_object(obnm);
 				lib[i]->load();
 				lib[i]->typ=i;
 			}
@@ -185,7 +185,7 @@ void ship::loadall()
 			if(ships[i])
 			{
 				sprintf(obsc,"Ship%hd",i);
-				database::switchobj(obsc);
+				database::select_database_object(obsc);
 				ships[i]->resolve_object_references();
 			}
 		}
@@ -1200,59 +1200,59 @@ void ship::save()
 {
 	char atsc[33]; //Attribute scratchpad
 
-	database::putvalue("Class",cls);
-	database::putvalue("Type",typ);
-	database::putvalue("ShipSprite",spr);
-	database::putvalue("Width",w[0]);
-	database::putvalue("Height",h[0]);
+	database::store_attribute("Class",cls);
+	database::store_attribute("Type",typ);
+	database::store_attribute("ShipSprite",spr);
+	database::store_attribute("Width",w[0]);
+	database::store_attribute("Height",h[0]);
 	if(fspr)
-		database::putvalue("FragSprite",fspr);
+		database::store_attribute("FragSprite",fspr);
 	if(fsnd)
-		database::putvalue("FragSound",fsnd);
+		database::store_attribute("FragSound",fsnd);
 	if(dsnd)
-		database::putvalue("DeathSound",dsnd);
+		database::store_attribute("DeathSound",dsnd);
 	if(all)
-		database::putvalue("Team",all->self);
-	database::putvalue("AIType",aity);
-	database::putvalue("XLoc",loc.x_component);
-	database::putvalue("YLoc",loc.y_component);
-	database::putvalue("Heading",vel.angle_degrees);
-	database::putvalue("Speed",vel.radius);
-	database::putvalue("TurnRate",turn_rate);
-	database::putvalue("SublightLimit",max_impulse_speed);
-	database::putvalue("SublightAcceleration",impulse_acceleration*10);
-	database::putvalue("WarpLimit",max_warp_speed);
-	database::putvalue("WarpAcceleration",warp_acceleration);
-	database::putvalue("Mass",mass);
-	database::putvalue("HullStrength",hull_integrity);
-	database::putvalue("HullStrengthLimit",max_hull_integrity);
+		database::store_attribute("Team",all->self);
+	database::store_attribute("AIType",aity);
+	database::store_attribute("XLoc",loc.x_component);
+	database::store_attribute("YLoc",loc.y_component);
+	database::store_attribute("Heading",vel.angle_degrees);
+	database::store_attribute("Speed",vel.radius);
+	database::store_attribute("TurnRate",turn_rate);
+	database::store_attribute("SublightLimit",max_impulse_speed);
+	database::store_attribute("SublightAcceleration",impulse_acceleration*10);
+	database::store_attribute("WarpLimit",max_warp_speed);
+	database::store_attribute("WarpAcceleration",warp_acceleration);
+	database::store_attribute("Mass",mass);
+	database::store_attribute("HullStrength",hull_integrity);
+	database::store_attribute("HullStrengthLimit",max_hull_integrity);
 	if(frnd)
-		database::putvalue("FriendTarget",frnd->self);
+		database::store_attribute("FriendTarget",frnd->self);
 	if(enem)
-		database::putvalue("EnemyTarget",enem->self);
+		database::store_attribute("EnemyTarget",enem->self);
 	if(plnt)
-		database::putvalue("PlanetTarget",plnt->self);
-	database::putvalue("MassLock",mass_locked);
-	database::putvalue("Crippled",is_crippled);
+		database::store_attribute("PlanetTarget",plnt->self);
+	database::store_attribute("MassLock",mass_locked);
+	database::store_attribute("Crippled",is_crippled);
 	for(int i=0;i<32;i++)
 	{
 		if(slots[i].item || slots[i].pos.radius!=-1)
 		{
 			sprintf(atsc,"Slot%hdAngle",i);
-			database::putvalue(atsc,slots[i].pos.angle_degrees);
+			database::store_attribute(atsc,slots[i].pos.angle_degrees);
 			sprintf(atsc,"Slot%hdRadius",i);
-			database::putvalue(atsc,slots[i].pos.radius);
+			database::store_attribute(atsc,slots[i].pos.radius);
 			sprintf(atsc,"Slot%hdFace",i);
-			database::putvalue(atsc,slots[i].face);
+			database::store_attribute(atsc,slots[i].face);
 			sprintf(atsc,"Slot%hdItem",i);
 			if(slots[i].item)
-				database::putvalue(atsc,slots[i].item->self);
+				database::store_attribute(atsc,slots[i].item->self);
 			else
-				database::putvalue(atsc,-1);
+				database::store_attribute(atsc,-1);
 			sprintf(atsc,"Slot%hdReadiness",i);
-			database::putvalue(atsc,slots[i].rdy);
+			database::store_attribute(atsc,slots[i].rdy);
 			sprintf(atsc,"Slot%hdCapacity",i);
-			database::putvalue(atsc,slots[i].cap);
+			database::store_attribute(atsc,slots[i].cap);
 		}
 	}
 }
@@ -1263,11 +1263,11 @@ void ship::load()
 	pol bpol;
 	vect vct1,vct2; //Temporaries for calculating the bounding box
 
-	database::getvalue("Class",cls);
-	typ=database::getvalue("Type");
-	spr=database::getvalue("ShipSprite");
-	w[0]=database::getvalue("Width");
-	h[0]=database::getvalue("Height");
+	database::retrieve_attribute("Class",cls);
+	typ=database::retrieve_attribute("Type");
+	spr=database::retrieve_attribute("ShipSprite");
+	w[0]=database::retrieve_attribute("Width");
+	h[0]=database::retrieve_attribute("Height");
 	for(int i=1;i<36;i++)
 	{
 		bpol.angle_degrees=i*10;
@@ -1293,26 +1293,26 @@ void ship::load()
 		else
 			h[i]=(int)vct2.y_component;
 	}
-	fspr=database::getvalue("FragSprite");
-	fsnd=database::getvalue("FragSound");
-	dsnd=database::getvalue("DeathSound");
-	all=alliance::get(database::getvalue("Team"));
-	aity=database::getvalue("AIType");
-	loc.x_component=database::getvalue("XLoc");
-	loc.y_component=database::getvalue("YLoc");
-	vel.angle_degrees=database::getvalue("Heading");
-	vel.radius=database::getvalue("Speed");
-	turn_rate=database::getvalue("TurnRate");
-	max_impulse_speed=database::getvalue("SublightLimit");
-	impulse_acceleration=(double)database::getvalue("SublightAcceleration")/10;
-	max_warp_speed=database::getvalue("WarpLimit");
-	warp_acceleration=database::getvalue("WarpAcceleration");
-	mass=database::getvalue("Mass");
-	hull_integrity=database::getvalue("HullStrength");
-	max_hull_integrity=database::getvalue("HullStrengthLimit");
+	fspr=database::retrieve_attribute("FragSprite");
+	fsnd=database::retrieve_attribute("FragSound");
+	dsnd=database::retrieve_attribute("DeathSound");
+	all=alliance::get(database::retrieve_attribute("Team"));
+	aity=database::retrieve_attribute("AIType");
+	loc.x_component=database::retrieve_attribute("XLoc");
+	loc.y_component=database::retrieve_attribute("YLoc");
+	vel.angle_degrees=database::retrieve_attribute("Heading");
+	vel.radius=database::retrieve_attribute("Speed");
+	turn_rate=database::retrieve_attribute("TurnRate");
+	max_impulse_speed=database::retrieve_attribute("SublightLimit");
+	impulse_acceleration=(double)database::retrieve_attribute("SublightAcceleration")/10;
+	max_warp_speed=database::retrieve_attribute("WarpLimit");
+	warp_acceleration=database::retrieve_attribute("WarpAcceleration");
+	mass=database::retrieve_attribute("Mass");
+	hull_integrity=database::retrieve_attribute("HullStrength");
+	max_hull_integrity=database::retrieve_attribute("HullStrengthLimit");
 	
-	mass_locked=database::getvalue("MassLock");
-	is_crippled=database::getvalue("Crippled");
+	mass_locked=database::retrieve_attribute("MassLock");
+	is_crippled=database::retrieve_attribute("Crippled");
 
 	selected_equipment_index=-1;
 	for(int i=0;i<32;i++)
@@ -1327,22 +1327,22 @@ void ship::load()
 		
 		try {
 			sprintf(atsc,"Slot%hdAngle",i);
-			slots[i].pos.angle_degrees=database::getvalue(atsc);
+			slots[i].pos.angle_degrees=database::retrieve_attribute(atsc);
 			sprintf(atsc,"Slot%hdRadius",i);
-			slots[i].pos.radius=database::getvalue(atsc);
+			slots[i].pos.radius=database::retrieve_attribute(atsc);
 			sprintf(atsc,"Slot%hdFace",i);
-			slots[i].face=database::getvalue(atsc);
+			slots[i].face=database::retrieve_attribute(atsc);
 			if(slots[i].face==-1)
 				slots[i].face=slots[i].pos.angle_degrees;
 			sprintf(atsc,"Slot%hdItem",i);
-			long item_id = database::getvalue(atsc);
+			long item_id = database::retrieve_attribute(atsc);
 			if(item_id >= 0) {
 				slots[i].item=equip::get(item_id);
 			}
 			sprintf(atsc,"Slot%hdReadiness",i);
-			slots[i].rdy=database::getvalue(atsc);
+			slots[i].rdy=database::retrieve_attribute(atsc);
 			sprintf(atsc,"Slot%hdCapacity",i);
-			slots[i].cap=database::getvalue(atsc);
+			slots[i].cap=database::retrieve_attribute(atsc);
 			if(slots[i].cap==-1 && slots[i].item)
 				slots[i].cap=slots[i].item->capacity;
 		} catch(...) {
@@ -1404,7 +1404,7 @@ ship::ship(int self)
 	char obsc[16]; //Object name scratchpad
 
 	sprintf(obsc,"Ship%hd",self);
-	database::switchobj(obsc);
+	database::select_database_object(obsc);
 	load();
 	insert(self);
 }
@@ -1646,9 +1646,9 @@ void ship::execute_attack_maneuvers(ship* target_ship,int str)
 
 void ship::resolve_object_references()
 {
-	frnd=get(database::getvalue("FriendTarget"));
-	enem=get(database::getvalue("EnemyTarget"));
-	plnt=planet::get(database::getvalue("PlanetTarget"));
+	frnd=get(database::retrieve_attribute("FriendTarget"));
+	enem=get(database::retrieve_attribute("EnemyTarget"));
+	plnt=planet::get(database::retrieve_attribute("PlanetTarget"));
 }
 
 void ship::maintain()

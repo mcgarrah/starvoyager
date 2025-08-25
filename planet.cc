@@ -404,7 +404,7 @@ planet::planet(int self)
 	if(planets[self])
 		throw error("This planet slot already taken");
 	sprintf(obsc,"Planet%d",self);
-	database::switchobj(obsc);
+	database::select_database_object(obsc);
 	load();
 	this->self=self;
 	planets[self]=this;
@@ -414,22 +414,22 @@ void planet::save()
 {
 	char atsc[33]; //Attribute scratchpad
 
-	database::putvalue("Name",nam);
+	database::store_attribute("Name",nam);
 	if(spr)
-		database::putvalue("Sprite",spr);
-	database::putvalue("SpriteRot",rot);
+		database::store_attribute("Sprite",spr);
+	database::store_attribute("SpriteRot",rot);
 	if(spr)
-		database::putvalue("Team",all->self);
-	database::putvalue("XLoc",loc.x_component);
-	database::putvalue("YLoc",loc.y_component);
-	database::putvalue("Type",typ);
+		database::store_attribute("Team",all->self);
+	database::store_attribute("XLoc",loc.x_component);
+	database::store_attribute("YLoc",loc.y_component);
+	database::store_attribute("Type",typ);
 	for(int i=0;i<MAX_EQUIPMENT_SLOTS;i++)
 	{
 		sprintf(atsc,"Sold%d",i);
 		if(sold[i])
-			database::putvalue(atsc,sold[i]->self);
+			database::store_attribute(atsc,sold[i]->self);
 		else
-			database::putvalue(atsc,-1);
+			database::store_attribute(atsc,-1);
 	}
 }
 
@@ -437,17 +437,17 @@ void planet::load()
 {
 	char atsc[33]; //Attribute scratchpad
 
-	database::getvalue("Name",nam);
-	spr=database::getvalue("Sprite");
-	rot=database::getvalue("SpriteRot");
-	all=alliance::get(database::getvalue("Team"));
-	loc.x_component=database::getvalue("XLoc");
-	loc.y_component=database::getvalue("YLoc");
-	typ=database::getvalue("Type");
+	database::retrieve_attribute("Name",nam);
+	spr=database::retrieve_attribute("Sprite");
+	rot=database::retrieve_attribute("SpriteRot");
+	all=alliance::get(database::retrieve_attribute("Team"));
+	loc.x_component=database::retrieve_attribute("XLoc");
+	loc.y_component=database::retrieve_attribute("YLoc");
+	typ=database::retrieve_attribute("Type");
 	for(int i=0;i<MAX_EQUIPMENT_SLOTS;i++)
 	{
 		sprintf(atsc,"Sold%d",i);
-		sold[i]=equip::get(database::getvalue(atsc));
+		sold[i]=equip::get(database::retrieve_attribute(atsc));
 	}
 }
 

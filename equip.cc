@@ -24,7 +24,7 @@ void equip::loadlib()
 		sprintf(nam,"Equipment%hd",i);
 		try
 		{
-			database::switchobj(nam);
+			database::select_database_object(nam);
 			equips[i]=new equip(i);
 			equips[i]->load();
 		}
@@ -54,19 +54,19 @@ equip::equip(int self)
 
 void equip::load()
 {
-	database::getvalue("Name",nam);
-	equipment_type=database::getvalue("Type");
-	mass=database::getvalue("Mass");
-	sprite_index=database::getvalue("Sprite");
-	color_index=database::getvalue("Colour");
-	sound_index=database::getvalue("Sound");
-	power_requirement=database::getvalue("Power");
-	readiness_timer=database::getvalue("CycleTime");
-	capacity=database::getvalue("Capacity");
-	range=database::getvalue("Range");
-	trck=database::getvalue("Tracking");
-	acov=database::getvalue("Coverage");
-	cost=database::getvalue("Cost");
+	database::retrieve_attribute("Name",nam);
+	equipment_type=database::retrieve_attribute("Type");
+	mass=database::retrieve_attribute("Mass");
+	sprite_index=database::retrieve_attribute("Sprite");
+	color_index=database::retrieve_attribute("Colour");
+	sound_index=database::retrieve_attribute("Sound");
+	power_requirement=database::retrieve_attribute("Power");
+	readiness_timer=database::retrieve_attribute("CycleTime");
+	capacity=database::retrieve_attribute("Capacity");
+	range=database::retrieve_attribute("Range");
+	trck=database::retrieve_attribute("Tracking");
+	acov=database::retrieve_attribute("Coverage");
+	cost=database::retrieve_attribute("Cost");
 }
 
 equip* equip::equips[LIBSIZE];

@@ -180,7 +180,7 @@ frag::frag(int self)
 
 	this->self=-1;
 	sprintf(obsc,"Frag%hd",self);
-	database::switchobj(obsc);
+	database::select_database_object(obsc);
 	load();
 	this->self=self;
 	frags[self]=this;
@@ -230,38 +230,38 @@ void frag::home()
 
 void frag::save()
 {
-	database::putvalue("Type",typ);
-	database::putvalue("Sprite",spr);
-	database::putvalue("Colour",col);
+	database::store_attribute("Type",typ);
+	database::store_attribute("Sprite",spr);
+	database::store_attribute("Colour",col);
 	if(trg)
-		database::putvalue("Target",trg->self);
+		database::store_attribute("Target",trg->self);
 	if(own)
-		database::putvalue("Owner",own->self);
-	database::putvalue("XLoc",loc.x_component);
-	database::putvalue("YLoc",loc.y_component);
-	database::putvalue("XVect",mov.x_component);
-	database::putvalue("YVect",mov.y_component);
-	database::putvalue("Rotation",rot);
-	database::putvalue("Power",pow);
-	database::putvalue("Tracking",trck);
-	database::putvalue("Range",rng);
+		database::store_attribute("Owner",own->self);
+	database::store_attribute("XLoc",loc.x_component);
+	database::store_attribute("YLoc",loc.y_component);
+	database::store_attribute("XVect",mov.x_component);
+	database::store_attribute("YVect",mov.y_component);
+	database::store_attribute("Rotation",rot);
+	database::store_attribute("Power",pow);
+	database::store_attribute("Tracking",trck);
+	database::store_attribute("Range",rng);
 }
 
 void frag::load()
 {
-	typ=database::getvalue("Type");
-	spr=database::getvalue("Sprite");
-	col=database::getvalue("Colour");
-	trg=ship::get(database::getvalue("Target"));
-	own=ship::get(database::getvalue("Owner"));
-	loc.x_component=database::getvalue("XLoc");
-	loc.y_component=database::getvalue("YLoc");
-	mov.x_component=database::getvalue("XVect");
-	mov.y_component=database::getvalue("YVect");
-	rot=database::getvalue("Rotation");
-	pow=database::getvalue("Power");
-	trck=database::getvalue("Tracking");
-	rng=database::getvalue("Range");
+	typ=database::retrieve_attribute("Type");
+	spr=database::retrieve_attribute("Sprite");
+	col=database::retrieve_attribute("Colour");
+	trg=ship::get(database::retrieve_attribute("Target"));
+	own=ship::get(database::retrieve_attribute("Owner"));
+	loc.x_component=database::retrieve_attribute("XLoc");
+	loc.y_component=database::retrieve_attribute("YLoc");
+	mov.x_component=database::retrieve_attribute("XVect");
+	mov.y_component=database::retrieve_attribute("YVect");
+	rot=database::retrieve_attribute("Rotation");
+	pow=database::retrieve_attribute("Power");
+	trck=database::retrieve_attribute("Tracking");
+	rng=database::retrieve_attribute("Range");
 }
 
 frag* frag::frags[ISIZE];

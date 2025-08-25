@@ -138,7 +138,7 @@ void benchmark_database_operations() {
 				char obj_name[32];
 				sprintf(obj_name, "BenchmarkObject%d", i);
 				database::putobject(obj_name);
-				database::putvalue("TestValue", i);
+				database::store_attribute("TestValue", i);
 			}
 			
 			database::closewriter(); // This calls fclose() internally
@@ -152,8 +152,8 @@ void benchmark_database_operations() {
 			for (int i = 0; i < 100; i++) {
 				char obj_name[32];
 				sprintf(obj_name, "BenchmarkObject%d", i);
-				database::switchobj(obj_name);
-				long value = database::getvalue("TestValue");
+				database::select_database_object(obj_name);
+				long value = database::retrieve_attribute("TestValue");
 				(void)value; // Suppress unused warning
 			}
 			

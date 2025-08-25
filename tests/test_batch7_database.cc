@@ -13,8 +13,8 @@
 void test_attribute_storage() {
 	try {
 		// Test basic attribute storage
-		database::putvalue("TestKey", 42);
-		database::putvalue("TestString", "TestValue");
+		database::store_attribute("TestKey", 42);
+		database::store_attribute("TestString", "TestValue");
 		
 		TEST_ASSERT(true, "attribute storage works");
 		
@@ -30,21 +30,21 @@ void test_attribute_retrieval() {
 		if (write_file) {
 			database::openwriter(write_file);
 			database::putobject("TestObject");
-			database::putvalue("RetrievalTest", 123);
-			database::putvalue("StringTest", "Hello");
+			database::store_attribute("RetrievalTest", 123);
+			database::store_attribute("StringTest", "Hello");
 			database::closewriter();
 		}
 		
 		FILE* read_file = fopen("retrieval_test.dat", "rb");
 		if (read_file) {
 			database::openreader(read_file);
-			database::switchobj("TestObject");
+			database::select_database_object("TestObject");
 			
-			long retrieved = database::getvalue("RetrievalTest");
+			long retrieved = database::retrieve_attribute("RetrievalTest");
 			TEST_EQUALS_INT(123, (int)retrieved, "attribute retrieval works");
 			
 			char test_string[64];
-			database::getvalue("StringTest", test_string);
+			database::retrieve_attribute("StringTest", test_string);
 			TEST_ASSERT(strcmp(test_string, "Hello") == 0, "string attribute retrieval works");
 			
 			database::closereader();
@@ -63,10 +63,10 @@ void test_database_object_selection() {
 			database::openwriter(write_file);
 			
 			database::putobject("TestObject1");
-			database::putvalue("ObjectTest", 100);
+			database::store_attribute("ObjectTest", 100);
 			
 			database::putobject("TestObject2");
-			database::putvalue("ObjectTest", 200);
+			database::store_attribute("ObjectTest", 200);
 			
 			database::closewriter();
 		}
@@ -75,12 +75,12 @@ void test_database_object_selection() {
 		if (read_file) {
 			database::openreader(read_file);
 			
-			database::switchobj("TestObject1");
-			long value1 = database::getvalue("ObjectTest");
+			database::select_database_object("TestObject1");
+			long value1 = database::retrieve_attribute("ObjectTest");
 			TEST_EQUALS_INT(100, (int)value1, "object selection maintains separate data");
 			
-			database::switchobj("TestObject2");
-			long value2 = database::getvalue("ObjectTest");
+			database::select_database_object("TestObject2");
+			long value2 = database::retrieve_attribute("ObjectTest");
 			TEST_EQUALS_INT(200, (int)value2, "object selection works correctly");
 			
 			database::closereader();
@@ -115,15 +115,15 @@ void test_file_stream_operations() {
 		if (write_file) {
 			database::openwriter(write_file);
 			database::putobject("TestObject");
-			database::putvalue("StreamTest", 999);
+			database::store_attribute("StreamTest", 999);
 			database::closewriter(); // This calls fclose() internally
 		}
 		
 		FILE* read_file = fopen("test_stream.dat", "rb");
 		if (read_file) {
 			database::openreader(read_file);
-			database::switchobj("TestObject");
-			long stream_value = database::getvalue("StreamTest");
+			database::select_database_object("TestObject");
+			long stream_value = database::retrieve_attribute("StreamTest");
 			database::closereader(); // This calls fclose() internally
 			
 			TEST_EQUALS_INT(999, (int)stream_value, "file stream operations work");
@@ -144,9 +144,9 @@ void test_save_load_consistency() {
 			database::openwriter(write_file);
 			
 			database::putobject("ConsistencyObject");
-			database::putvalue("TestValue1", 111);
-			database::putvalue("TestValue2", 222);
-			database::putvalue("TestString", "ConsistencyTest");
+			database::store_attribute("TestValue1", 111);
+			database::store_attribute("TestValue2", 222);
+			database::store_attribute("TestString", "ConsistencyTest");
 			
 			database::closewriter(); // This calls fclose() internally
 		}
@@ -155,12 +155,12 @@ void test_save_load_consistency() {
 		FILE* read_file = fopen("consistency_test.dat", "rb");
 		if (read_file) {
 			database::openreader(read_file);
-			database::switchobj("ConsistencyObject");
+			database::select_database_object("ConsistencyObject");
 			
-			long val1 = database::getvalue("TestValue1");
-			long val2 = database::getvalue("TestValue2");
+			long val1 = database::retrieve_attribute("TestValue1");
+			long val2 = database::retrieve_attribute("TestValue2");
 			char str_val[64];
-			database::getvalue("TestString", str_val);
+			database::retrieve_attribute("TestString", str_val);
 			
 			database::closereader(); // This calls fclose() internally
 			
@@ -197,10 +197,10 @@ void test_database_corruption_recovery() {
 		FILE* read_file = fopen("recovery_test.dat", "rb");
 		if (read_file) {
 			database::openreader(read_file);
-			database::switchobj("RecoveryObject");
+			database::select_database_object("RecoveryObject");
 			
 			try {
-				long missing_value = database::getvalue("NonExistentKey");
+				long missing_value = database::retrieve_attribute("NonExistentKey");
 				// Should handle gracefully
 				(void)missing_value; // Suppress unused warning
 			} catch (...) {

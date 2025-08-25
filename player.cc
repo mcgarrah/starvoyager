@@ -107,7 +107,7 @@ void player::loadall()
 		try
 		{
 			snprintf(obsc,sizeof(obsc),"Account%hd",i);
-			database::switchobj(obsc);
+			database::select_database_object(obsc);
 			players[i]=new player();
 			players[i]->self=i;
 			players[i]->load();
@@ -271,10 +271,10 @@ void player::logout()
 
 void player::save()
 {
-	database::putvalue("Name",nam);
-	database::putvalue("Password",pass);
-	database::putvalue("Op",op);
-	database::putvalue("Cash",cash);
+	database::store_attribute("Name",nam);
+	database::store_attribute("Password",pass);
+	database::store_attribute("Op",op);
+	database::store_attribute("Cash",cash);
 	if(mshp)
 		mshp->save();
 }
@@ -282,10 +282,10 @@ void player::save()
 void player::load()
 {
 	in=NULL;
-	database::getvalue("Name",nam);
-	database::getvalue("Password",pass);
-	op=database::getvalue("Op");
-	cash=database::getvalue("Cash");
+	database::retrieve_attribute("Name",nam);
+	database::retrieve_attribute("Password",pass);
+	op=database::retrieve_attribute("Op");
+	cash=database::retrieve_attribute("Cash");
 	// Safely delete existing ship if it exists
 	if(mshp)
 	{
