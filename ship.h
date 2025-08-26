@@ -30,7 +30,7 @@ class ship //Spaceship type in game
 	enum {AI_NULL=0,AI_AUTOPILOT=1,AI_PATROLLER=2,AI_INVADER=3,AI_CARAVAN=4,AI_BUDDY=5,AI_FLEET=6}; //AI behaviour types
 	enum {PRCH_FUEL,PRCH_ARMS,PRCH_HULL}; //Codes for different purchases
 
-	ship(cord loc,ship* lshp,alliance* tali,int aity); //Creates a new ship at given place, with given alliance and given ai type, loaded from given library ship
+	ship(cord loc,ship* template_ship,alliance* target_alliance,int aity); //Creates a new ship at given place, with given alliance and given ai type, loaded from given library ship
 	ship(); //Blank constructor
 
 	~ship(); //Destructor, deletes ship resolving all dependencies (like frags and other ships)
@@ -42,16 +42,16 @@ class ship //Spaceship type in game
 	static void behaveall(); //Simulates primitive behaviour for all ships
 	static void saveall(); //Save all ships to database
 	static void loadall(); //Load all ships from database
-	static ship* get(int indx); //Returns a pointer to a ship of given index
+	static ship* find_by_index(int indx); //Returns a pointer to a ship of given index
 	static ship* libget(int indx); //Returns a ship from the library
 	static bool has_available_ship_slot(); //Quickly looks for a free slot if possible for a (non-player) ship, returning true if ok to go ahead and do the hard work
 
 	void turn(int dir); //Turns the ship by specified amount(in 1/100ths of an angle)
 	void accel(int dir,bool wrp); //Accelerates the ship positively or negatively (+1 or -1 in dir), wrp deciding if you are willing to make the impulse<=>warp transition
 	void shoot(bool torp); //Shoot at target with torpedoes if torp, otherwise phasers
-	bool see(ship* target_ship); //Returns true if the given ship is visible to the current one, otherwise false
-	bool see(planet* target_planet); //Returns true if the given planet is visible to the current ship, otherwise false
-	bool see(frag* tfrg); //Returns true if the given frag is visible to the current ship, otherwise false
+	bool can_detect(ship* target_ship); //Returns true if the given ship is visible to the current one, otherwise false
+	bool can_detect(planet* target_planet); //Returns true if the given planet is visible to the current ship, otherwise false
+	bool can_detect(frag* tfrg); //Returns true if the given frag is visible to the current ship, otherwise false
 	int interact(char* txt,short cmod,short opr,ship* player_ship); //Handles a server request for information/action from this ship, with the given comm mode, operand and player's ship, writing the text into txt and returning the sprite index (-1 if n/a)
 	int get_available_cargo_space(); //Returns free mass on board
 	void cloak(); //Cloak the ship
@@ -60,8 +60,8 @@ class ship //Spaceship type in game
 	void shieldsdown(); //Drop the shields
 	void serialize_to_network(int typ,unsigned char* buf); //Get type of data from ship into a network buffer
 	bool detect_collision(cord fragment_location,vect fragment_velocity); //Given an intruder location and vector, determines if a collision occurs, returning true if it does, false otherwise
-	void hit(int mag,cord fragment_location,vect fragment_velocity,ship* src); //Damages the ship with given magnitude, also location and vector of striking object, plus the source of the attack (expected to be frag owner)
-	void assign(player* ply); //Sets the ship up for entrance of given player
+	void take_damage(int mag,cord fragment_location,vect fragment_velocity,ship* src); //Damages the ship with given magnitude, also location and vector of striking object, plus the source of the attack (expected to be frag owner)
+	void assign(player* assigned_player); //Sets the ship up for entrance of given player
 	long purchase(int prch,short ripo,bool buy);
 	long purchase(equip* prch,int ripo,bool buy); //Returns the cost of a given purchase type at given rip-off index, with buy set actually deducts the cash
 	void transport(planet* to);
@@ -73,15 +73,15 @@ class ship //Spaceship type in game
 	void update_equipment_references(); //Resolve key equipment within the ship, should be called whenever the equipment loadout is changed at all
 
 	int self; //Self index in the ship database
-	player* ply; //Pointer to player associated, null if none
+	player* assigned_player; //Pointer to player associated, null if none
 	alliance* all; //Alliance
 	cord loc; //Co-ordinates 
 	char cls[65]; //Ship class 
 	int typ; //Ship type (index in library)
 	int spr; //Sprite index
-	ship* frnd; //Friend target
-	ship* enem; //Enemy target
-	planet* plnt; //Planetary target
+	ship* friendly_target; //Friend target
+	ship* enemy_target; //Enemy target
+	planet* planet_target; //Planetary target
 	int aity; //AI type
 	vect mov; //Current actual velocity vector
 

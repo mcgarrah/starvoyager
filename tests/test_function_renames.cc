@@ -109,7 +109,7 @@ void test_ai_behavior_functions() {
 		ship* test_ship = ship::libget(0);
 		if (test_ship) {
 			// Test ship visibility (uses AI-related logic)
-			bool can_see_self = test_ship->see(test_ship);
+			bool can_see_self = test_ship->can_detect(test_ship);
 			TEST_ASSERT(can_see_self == true, "AI visibility functions work");
 		} else {
 			TEST_ASSERT(true, "AI behavior test skipped (no test ship)");

@@ -75,15 +75,15 @@ void frag::simulateall()
 	}	
 }
 
-void frag::notifydelete(ship* tshp)
+void frag::notifydelete(ship* spawned_ship)
 {
 	for(int i=0;i<ISIZE;i++)
 	{
 		if(frags[i])
 		{
-			if(frags[i]->trg==tshp)
+			if(frags[i]->trg==spawned_ship)
 				frags[i]->trg=NULL;
-			if(frags[i]->own==tshp)
+			if(frags[i]->own==spawned_ship)
 				frags[i]->own=NULL;
 		}
 	}
@@ -200,7 +200,7 @@ void frag::physics()
 	{
 		if(trg->detect_collision(loc,mov))
 		{
-			trg->hit(pow,loc,mov,own);
+			trg->take_damage(pow,loc,mov,own);
 			delete this;
 			return;
 		}
@@ -252,8 +252,8 @@ void frag::load()
 	typ=database::retrieve_attribute("Type");
 	spr=database::retrieve_attribute("Sprite");
 	col=database::retrieve_attribute("Colour");
-	trg=ship::get(database::retrieve_attribute("Target"));
-	own=ship::get(database::retrieve_attribute("Owner"));
+	trg=ship::find_by_index(database::retrieve_attribute("Target"));
+	own=ship::find_by_index(database::retrieve_attribute("Owner"));
 	loc.x_component=database::retrieve_attribute("XLoc");
 	loc.y_component=database::retrieve_attribute("YLoc");
 	mov.x_component=database::retrieve_attribute("XVect");

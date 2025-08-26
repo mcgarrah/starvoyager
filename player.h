@@ -44,7 +44,7 @@ class player //Represents a player account, linked to by server objects if logge
 
 	int self; //Self-index value
 	char pass[33]; //Login password
-	ship* mshp; //Ship associated with player in storage
+	ship* player_ship; //Ship associated with player in storage
 
 	void save(); //Save this player out to database
 	void load(); //Save this player out to database

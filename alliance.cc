@@ -94,15 +94,15 @@ equip* alliance::get_random_equipment()
 ship* alliance::get_spawn_ship_template()
 {
 	int shpc[ship::LIBSIZE]; //Count of each ship type
-	ship* tshp; //Ship being examined
+	ship* spawned_ship; //Ship being examined
 
 	for(int i=0;i<ship::LIBSIZE;i++)
 		shpc[i]=shpq[i];
 	for(int i=0;i<ship::ISIZE;i++)
 	{
-		tshp=ship::get(i);
-		if(tshp && tshp->typ>=0 && tshp->typ<=ship::LIBSIZE)
-			shpc[tshp->typ]--;
+		spawned_ship=ship::find_by_index(i);
+		if(spawned_ship && spawned_ship->typ>=0 && spawned_ship->typ<=ship::LIBSIZE)
+			shpc[spawned_ship->typ]--;
 	}
 	for(int i=0,j=0;i<ship::LIBSIZE*2;i++)
 	{
@@ -116,15 +116,15 @@ ship* alliance::get_spawn_ship_template()
 int alliance::get_ai_behavior_type()
 {
 	int aic[32]; //Count of each AI type
-	ship* tshp; //Ship being examined
+	ship* spawned_ship; //Ship being examined
 
 	for(int i=0;i<32;i++)
 		aic[i]=aiq[i];
 	for(int i=0;i<ship::ISIZE;i++)
 	{
-		tshp=ship::get(i);
-		if(tshp && tshp->aity>=0 && tshp->aity<=32)
-			aic[tshp->aity]--;
+		spawned_ship=ship::find_by_index(i);
+		if(spawned_ship && spawned_ship->aity>=0 && spawned_ship->aity<=32)
+			aic[spawned_ship->aity]--;
 	}
 	for(int i=0,j=0;i<64;i++)
 	{

@@ -21,11 +21,11 @@ void test_ship_detection_functions() {
 		ship* test_ship = ship::libget(0);
 		if (test_ship) {
 			// Test see() function with null target
-			bool result = test_ship->see((ship*)NULL);
+			bool result = test_ship->can_detect((ship*)NULL);
 			TEST_ASSERT(result == false, "ship see() handles null ship");
 			
 			// Test see() function with self
-			result = test_ship->see(test_ship);
+			result = test_ship->can_detect(test_ship);
 			TEST_ASSERT(result == true, "ship see() returns true for self");
 		}
 		TEST_ASSERT(true, "ship detection functions work");
@@ -45,7 +45,7 @@ void test_ship_damage_system() {
 			vect hit_velocity = {0, 0};
 			
 			// Test hit() function - should not crash
-			test_ship->hit(10, hit_location, hit_velocity, NULL);
+			test_ship->take_damage(10, hit_location, hit_velocity, NULL);
 			TEST_ASSERT(true, "ship hit() function works");
 		} else {
 			TEST_ASSERT(true, "ship damage test skipped (no test ship)");
@@ -61,15 +61,15 @@ void test_ship_index_operations() {
 		
 		// Test get() function with valid indices
 		for (int i = 0; i < 10; i++) {
-			(void)ship::get(i);
+			(void)ship::find_by_index(i);
 			// Should not crash, may return null
 		}
 		
 		// Test get() function with invalid indices
-		ship* s1 = ship::get(-1);
+		ship* s1 = ship::find_by_index(-1);
 		TEST_ASSERT(s1 == NULL, "ship get() handles negative index");
 		
-		ship* s2 = ship::get(1000);
+		ship* s2 = ship::find_by_index(1000);
 		TEST_ASSERT(s2 == NULL, "ship get() handles large index");
 		
 		TEST_ASSERT(true, "ship index operations work");
@@ -84,13 +84,13 @@ void test_planet_selection() {
 		alliance::init();
 		
 		// Test pick() function with null alliance
-		planet* p1 = planet::pick(NULL);
+		planet* p1 = planet::find_random_planet(NULL);
 		TEST_ASSERT(p1 == NULL, "planet pick() handles null alliance");
 		
 		// Test pick() function with valid alliance
 		alliance* test_alliance = alliance::get(0);
 		if (test_alliance) {
-			(void)planet::pick(test_alliance);
+			(void)planet::find_random_planet(test_alliance);
 			// Should not crash, may return null
 		}
 		
@@ -112,9 +112,9 @@ void test_variable_name_consistency() {
 		if (test_ship) {
 			// These should compile and not crash
 			(void)test_ship->all;
-			(void)test_ship->enem;
-			(void)test_ship->frnd;
-			(void)test_ship->plnt;
+			(void)test_ship->enemy_target;
+			(void)test_ship->friendly_target;
+			(void)test_ship->planet_target;
 		}
 		
 		TEST_ASSERT(true, "variable name patterns accessible");
@@ -132,9 +132,9 @@ void test_ship_planet_interactions() {
 		ship* test_ship = ship::libget(0);
 		if (test_ship) {
 			// Test planet visibility
-			planet* test_planet = planet::get(0);
+			planet* test_planet = planet::find_by_index(0);
 			if (test_planet) {
-				(void)test_ship->see(test_planet);
+				(void)test_ship->can_detect(test_planet);
 				// Should not crash
 			}
 		}
@@ -190,8 +190,8 @@ void test_enemy_target_selection() {
 		if (test_ship) {
 			// Test enemy/friendly targeting (public interface)
 			// These are private methods, so test through public interface
-			test_ship->enem = NULL;
-			test_ship->frnd = NULL;
+			test_ship->enemy_target = NULL;
+			test_ship->friendly_target = NULL;
 			// Should not crash
 		}
 		

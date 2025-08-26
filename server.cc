@@ -233,7 +233,7 @@ void server::registernoise(ship* fr,int snd)
 
 	for(int i=0;i<ISIZE;i++)
 	{
-		if(connections[i] && connections[i]->ply && connections[i]->ply->in && connections[i]->lsnd!=snd && connections[i]->ply->in->see(fr))
+		if(connections[i] && connections[i]->ply && connections[i]->ply->in && connections[i]->lsnd!=snd && connections[i]->ply->in->can_detect(fr))
 		{	
 			connections[i]->lsnd=snd;	
 			if(connections[i]->hlpr)
@@ -492,20 +492,20 @@ void server::action(int typ,short opr)
 
 				case CLIENT_TRG:
 				ply->in->aity=ship::AI_NULL;
-				ply->in->enem=NULL;
-				ply->in->frnd=NULL;
-				ply->in->plnt=NULL;
+				ply->in->enemy_target=NULL;
+				ply->in->friendly_target=NULL;
+				ply->in->planet_target=NULL;
 				if(opr>=0 && opr<(planet::ISIZE+ship::ISIZE))
 				{
 					if(opr<planet::ISIZE)
-						ply->in->plnt=planet::get(opr);
+						ply->in->planet_target=planet::find_by_index(opr);
 					else
 					{
-						ply->in->enem=ship::get(opr-planet::ISIZE);
-						if(ply->in->enem==ply->in)
-							ply->in->enem=NULL;
-						if(ply->in->enem) {
-							if(ply->in->all->opposes(ply->in->enem->all))
+						ply->in->enemy_target=ship::find_by_index(opr-planet::ISIZE);
+						if(ply->in->enemy_target==ply->in)
+							ply->in->enemy_target=NULL;
+						if(ply->in->enemy_target) {
+							if(ply->in->all->opposes(ply->in->enemy_target->all))
 								registersound(ply->in,SND_PROXIMITY);
 							else
 								registersound(ply->in,SND_BEEP2);
@@ -604,7 +604,7 @@ void server::changecmod(int opr)
 {
 	char* txtp;
 	char txt[1024]; //Text buffer for constructing output
-	alliance* tali; //Alliance for possible choosing
+	alliance* target_alliance; //Alliance for possible choosing
 	int spr; //Sprite to spritetocons with
 
 	cmod=opr;
@@ -641,11 +641,11 @@ void server::changecmod(int opr)
 			if(written > 0 && written < remaining) txtp += written;
 			for(int i=0;i<alliance::LIBSIZE;i++)
 			{
-				tali=alliance::get(i);
-				if(tali)
+				target_alliance=alliance::get(i);
+				if(target_alliance)
 				{
 					remaining = sizeof(txt) - (txtp - txt);
-					written = snprintf(txtp, remaining, "[%d] %s\n",i,tali->nam);
+					written = snprintf(txtp, remaining, "[%d] %s\n",i,target_alliance->nam);
 					if(written > 0 && written < remaining) txtp += written;
 				}
 			}
@@ -664,17 +664,17 @@ void server::changecmod(int opr)
 		break;
 
 		case CMOD_SCAN:
-		if(ply->in->enem)
+		if(ply->in->enemy_target)
 		{
-			spr=ply->in->enem->interact(txt,CMOD_SCAN,-1,ply->in);
+			spr=ply->in->enemy_target->interact(txt,CMOD_SCAN,-1,ply->in);
 			printtocons(txt);
 			spritetocons(spr);
 		}
 		else
 		{
-			if(ply->in->plnt)
+			if(ply->in->planet_target)
 			{
-				spr=ply->in->plnt->interact(txt,CMOD_SCAN,-1,ply->in);
+				spr=ply->in->planet_target->interact(txt,CMOD_SCAN,-1,ply->in);
 				printtocons(txt);
 				spritetocons(spr);
 			}
@@ -686,16 +686,16 @@ void server::changecmod(int opr)
 		break;
 
 		case CMOD_HAIL:
-		if(ply->in->enem)
+		if(ply->in->enemy_target)
 		{
-			ply->in->enem->interact(txt,CMOD_HAIL,-1,ply->in);
+			ply->in->enemy_target->interact(txt,CMOD_HAIL,-1,ply->in);
 			printtocons(txt);
 		}
 		else
 		{
-			if(ply->in->plnt)
+			if(ply->in->planet_target)
 			{
-				ply->in->plnt->interact(txt,CMOD_HAIL,-1,ply->in);
+				ply->in->planet_target->interact(txt,CMOD_HAIL,-1,ply->in);
 				printtocons(txt);
 			}
 			else
@@ -706,9 +706,9 @@ void server::changecmod(int opr)
 		break;
 		
 		case CMOD_REFIT:
-		if(ply->in->plnt)
+		if(ply->in->planet_target)
 		{
-			ply->in->plnt->interact(txt,CMOD_REFIT,-1,ply->in);
+			ply->in->planet_target->interact(txt,CMOD_REFIT,-1,ply->in);
 			printtocons(txt);
 		}
 		break;
@@ -718,7 +718,7 @@ void server::changecmod(int opr)
 			int remaining = sizeof(txt) - (txtp - txt);
 			int written = snprintf(txtp, remaining, "Messaging\n\n");
 			if(written > 0 && written < remaining) txtp += written;
-			if(ply->in->enem && ply->in->enem->ply) {
+			if(ply->in->enemy_target && ply->in->enemy_target->assigned_player) {
 				remaining = sizeof(txt) - (txtp - txt);
 				written = snprintf(txtp, remaining, "[1] Chat with target player\n");
 				if(written > 0 && written < remaining) txtp += written;
@@ -753,10 +753,10 @@ void server::changecmod(int opr)
 			int remaining = sizeof(txt) - (txtp - txt);
 			int written = snprintf(txtp, remaining, "WHOIS\n\n");
 			if(written > 0 && written < remaining) txtp += written;
-			if(ply->in->enem)
+			if(ply->in->enemy_target)
 			{
 				remaining = sizeof(txt) - (txtp - txt);
-				spr=ply->in->enem->interact(txtp,CMOD_WHOIS,-1,ply->in);
+				spr=ply->in->enemy_target->interact(txtp,CMOD_WHOIS,-1,ply->in);
 				txtp=txt+strlen(txt);
 			}
 			else {
@@ -811,8 +811,8 @@ void server::changecmod(int opr)
 void server::cons(int opr)
 {
 	char txt[1024]; //Text buffer for constructing output
-	alliance* tali; //Alliance to choose
-	ship* tshp; //Temporary ship scratchpad
+	alliance* target_alliance; //Alliance to choose
+	ship* spawned_ship; //Temporary ship scratchpad
 
 	if(opr<0)
 		return;
@@ -822,11 +822,11 @@ void server::cons(int opr)
 	switch(cmod)
 	{
 		case CMOD_CHOOSE:
-		tali=alliance::get(opr);
-		if(tali)
+		target_alliance=alliance::get(opr);
+		if(target_alliance)
 		{
 			try {
-				ply->spawn(tali);
+				ply->spawn(target_alliance);
 				log("Spawned as %s(%s)",ply->in->cls,ply->in->all->nam);
 				changecmod(CMOD_HACK);
 			} catch(error it) {
@@ -848,35 +848,35 @@ void server::cons(int opr)
 		break;
 
 		case CMOD_SCAN:
-		if(ply->in->enem)
-			ply->in->enem->interact(txt,CMOD_SCAN,opr,ply->in);
+		if(ply->in->enemy_target)
+			ply->in->enemy_target->interact(txt,CMOD_SCAN,opr,ply->in);
 		else
-			if(ply->in->plnt)
-				ply->in->plnt->interact(txt,CMOD_SCAN,opr,ply->in);
+			if(ply->in->planet_target)
+				ply->in->planet_target->interact(txt,CMOD_SCAN,opr,ply->in);
 		break;
 
 		case CMOD_HAIL:
-		if(ply->in->enem)
+		if(ply->in->enemy_target)
 		{
-			ply->in->enem->interact(txt,CMOD_HAIL,opr,ply->in);
+			ply->in->enemy_target->interact(txt,CMOD_HAIL,opr,ply->in);
 			printtomesg(txt);
 			changecmod(CMOD_HAIL);
 		}
 		else
 		{
-			if(ply->in->plnt)
+			if(ply->in->planet_target)
 			{
 				if(opr==5)
 				{
 					try {
-						if(!ply || !ply->in || !ply->in->plnt) {
+						if(!ply || !ply->in || !ply->in->planet_target) {
 							throw error("Invalid player or planet state");
 						}
-						if(ply->in->see(ply->in->plnt))
+						if(ply->in->can_detect(ply->in->planet_target))
 						{
-							if(ply->in->plnt->all==ply->in->all)
+							if(ply->in->planet_target->all==ply->in->all)
 							{
-								ply->in->transport(ply->in->plnt);
+								ply->in->transport(ply->in->planet_target);
 								ply->commit();
 								printtomesg("Restore position saved");
 							}
@@ -901,7 +901,7 @@ void server::cons(int opr)
 				}
 				else
 				{
-					ply->in->plnt->interact(txt,CMOD_HAIL,opr,ply->in);
+					ply->in->planet_target->interact(txt,CMOD_HAIL,opr,ply->in);
 					printtomesg(txt);
 					changecmod(CMOD_HAIL);
 				}
@@ -910,16 +910,16 @@ void server::cons(int opr)
 		break;
 
 		case CMOD_REFIT:
-		if(ply->in->plnt)
+		if(ply->in->planet_target)
 		{
-			ply->in->plnt->interact(txt,CMOD_REFIT,opr,ply->in);
+			ply->in->planet_target->interact(txt,CMOD_REFIT,opr,ply->in);
 			printtomesg(txt);
 			changecmod(CMOD_REFIT);
 		}
 		break;
 
 		case CMOD_CHAT:
-		if(opr==1 && ply->in->enem && ply->in->enem->ply)
+		if(opr==1 && ply->in->enemy_target && ply->in->enemy_target->assigned_player)
 			changecmod(CMOD_CHATPRIVATE);
 		if(opr==2)
 			changecmod(CMOD_CHATTEAM);
@@ -930,16 +930,16 @@ void server::cons(int opr)
 		case CMOD_WHOIS:
 		if(opr==1)
 		{
-			for(int i=0,j=(ply->in->enem ? ply->in->enem->self+1 : 0);i<ship::ISIZE;i++,j++)
+			for(int i=0,j=(ply->in->enemy_target ? ply->in->enemy_target->self+1 : 0);i<ship::ISIZE;i++,j++)
 			{
 				if(j>=ship::ISIZE)
 					j=0;
-				tshp=ship::get(j);
-				if(tshp && tshp->ply && tshp!=ply->in)
+				spawned_ship=ship::find_by_index(j);
+				if(spawned_ship && spawned_ship->assigned_player && spawned_ship!=ply->in)
 				{
-					ply->in->enem=tshp;
-					ply->in->frnd=NULL;
-					ply->in->plnt=NULL;
+					ply->in->enemy_target=spawned_ship;
+					ply->in->friendly_target=NULL;
+					ply->in->planet_target=NULL;
 					break;
 				}
 			}
@@ -1079,9 +1079,9 @@ void server::input()
 		break;
 
 		case CMOD_CHATPRIVATE:
-		if(ply && ply->in && ply->in->enem && ply->in->enem->ply)
+		if(ply && ply->in && ply->in->enemy_target && ply->in->enemy_target->assigned_player)
 		{
-			hail(ply,ply->in->enem->ply,inpb);
+			hail(ply,ply->in->enemy_target->assigned_player,inpb);
 			changecmod(CMOD_CHATPRIVATE);
 		}
 		break;
@@ -1258,10 +1258,10 @@ void server::uploadplanets()
 	if(!hlpr) return;
 	for(int i=0;i<planet::ISIZE;i++)
 	{
-		tpln=planet::get(i);
+		tpln=planet::find_by_index(i);
 		if(tpln)
 		{
-			if(ply->in->see(tpln))
+			if(ply->in->can_detect(tpln))
 			{
 				if(!plnu[i])
 				{
@@ -1301,28 +1301,28 @@ void server::uploadplanets()
 void server::uploadships()
 {
 	unsigned char buf[256]; //Outgoing scratchpad buffer to use
-	ship* tshp; //Concerned ship
+	ship* spawned_ship; //Concerned ship
 
 	if(!hlpr) return;
 	for(int i=0;i<ship::ISIZE;i++)
 	{
-		tshp=ship::get(i);
-		//if(tshp!=ply->in)
+		spawned_ship=ship::find_by_index(i);
+		//if(spawned_ship!=ply->in)
 		{
-			if(tshp)
+			if(spawned_ship)
 			{
-				if(ply->in->see(tshp))
+				if(ply->in->can_detect(spawned_ship))
 				{
 					if(!shpu[i])
 					{
-						tshp->serialize_to_network(SERV_NEW,buf);
+						spawned_ship->serialize_to_network(SERV_NEW,buf);
 						hlpr->send(buf,SERV_NEW_SZ);
-						tshp->serialize_to_network(SERV_NAME,buf);
+						spawned_ship->serialize_to_network(SERV_NAME,buf);
 						hlpr->send(buf,SERV_NAME_SZ);
 						shpu[i]=true;
 					}
-					tshp->serialize_to_network(SERV_UPD,buf);
-					if(ply->in->all->opposes(tshp->all))
+					spawned_ship->serialize_to_network(SERV_UPD,buf);
+					if(ply->in->all->opposes(spawned_ship->all))
 						buf[21]=1;
 					hlpr->send(buf,SERV_UPD_SZ);
 				}
@@ -1362,7 +1362,7 @@ void server::uploadfrags()
 		tfrg=frag::get(i);
 		if(tfrg)
 		{
-			if(ply->in->see(tfrg))
+			if(ply->in->can_detect(tfrg))
 			{
 				if(frgu[i])
 				{
@@ -1424,14 +1424,14 @@ void server::kill()
 	}
 }
 
-void server::hilight(ship* tshp)
+void server::hilight(ship* spawned_ship)
 {
 	unsigned char buf[SERV_HILIGHT_SZ]; //Buffer for sending hilight information
 
-	if(tshp && hlpr)
+	if(spawned_ship && hlpr)
 	{
 		buf[0]=SERV_HILIGHT;
-		calc::inttodat(ship2pres(tshp->self),buf+1);
+		calc::inttodat(ship2pres(spawned_ship->self),buf+1);
 		hlpr->send(buf,SERV_HILIGHT_SZ);
 	}
 }

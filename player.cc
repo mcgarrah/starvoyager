@@ -23,7 +23,7 @@ player::player()
 {
 	self=-1;
 	in=NULL;
-	mshp=NULL;
+	player_ship=NULL;
 	pass[0]='\0';
 	op=false;
 	cash=0;
@@ -50,7 +50,7 @@ player::player(char* nam)
 		op=true;
 	else
 		op=false;
-	mshp=NULL;
+	player_ship=NULL;
 	cash=0;
 	cashi=0;
 	player_count++;
@@ -61,8 +61,8 @@ player::~player()
 	server::notifydelete(this);
 	if(self>=0 && self<ISIZE)
 		players[self]=NULL;
-	if(mshp)
-		delete mshp;
+	if(player_ship)
+		delete player_ship;
 	if(in)
 		delete in;
 	player_count--;
@@ -89,7 +89,7 @@ void player::saveall()
 
 	for(int i=0;i<ISIZE;i++)
 	{
-		if(players[i] && players[i]->mshp)
+		if(players[i] && players[i]->player_ship)
 		{
 			snprintf(obsc,sizeof(obsc),"Account%hd",i);
 			database::putobject(obsc);
@@ -126,33 +126,33 @@ player* player::get(char* nam)
 	return NULL;
 }
 
-void player::spawn(alliance* tali)
+void player::spawn(alliance* target_alliance)
 {
 	planet* tpln; //Planet to spawn near
 	cord spawn_location; //Location to spawn at
 
-	tpln=planet::pick(tali);
+	tpln=planet::find_random_planet(target_alliance);
 	if(tpln)
 	{	
 		spawn_location=tpln->loc;
 		spawn_location.x_component+=calc::random_int(150)-calc::random_int(150);
 		spawn_location.y_component+=calc::random_int(150)-calc::random_int(150);
-		if(mshp)
-			delete mshp;
-		if(!(tali->spw))
+		if(player_ship)
+			delete player_ship;
+		if(!(target_alliance->spw))
 		{
 			throw error("Cannot play for this alliance");
 		}
 		try
 		{
-			mshp=new ship(spawn_location,tali->spw,tali,ship::AI_NULL);
+			player_ship=new ship(spawn_location,target_alliance->spw,target_alliance,ship::AI_NULL);
 		}
 		catch(error it)
 		{
 			throw it;
 		}
 		in=new ship();
-		*in=*mshp;
+		*in=*player_ship;
 		in->assign(this);
 		try
 		{
@@ -161,9 +161,9 @@ void player::spawn(alliance* tali)
 		}
 		catch(error it)
 		{
-			if(mshp) {
-				delete mshp;
-				mshp=NULL;
+			if(player_ship) {
+				delete player_ship;
+				player_ship=NULL;
 			}
 			delete in;
 			in=NULL;
@@ -178,7 +178,7 @@ void player::login(char* pass)
 {
 	if(in)
 		throw error("Already logged in");
-	if(!mshp)
+	if(!player_ship)
 		throw error("No ship associated with this user");
 	if(pass)
 	{
@@ -190,7 +190,7 @@ void player::login(char* pass)
 			throw error("Invalid password");
 	}
 	in=new ship();
-	*in=*mshp;
+	*in=*player_ship;
 	in->assign(this);
 	try
 	{
@@ -215,25 +215,25 @@ void player::commit()
 {
 	if(!in)
 		return;
-	if(mshp)
+	if(player_ship)
 	{
-		mshp->ply=NULL;
-		delete mshp;
-		mshp=NULL;
+		player_ship->assigned_player=NULL;
+		delete player_ship;
+		player_ship=NULL;
 	}
-	mshp=new ship();
-	*mshp=*in;
-	mshp->self=-1;
+	player_ship=new ship();
+	*player_ship=*in;
+	player_ship->self=-1;
 	cash=cashi;
 }
 
-void player::transfer(ship* tshp)
+void player::transfer(ship* spawned_ship)
 {
 	in->assign(NULL);
-	in->frnd=tshp;
+	in->friendly_target=spawned_ship;
 	in->aity=ship::AI_FLEET;
-	tshp->all=in->all;
-	in=tshp;
+	spawned_ship->all=in->all;
+	in=spawned_ship;
 	in->assign(this);
 }
 
@@ -265,7 +265,7 @@ void player::logout()
 	if(in)
 		delete in;
 	server::bulletin("%s left the game",nam);
-	if(!mshp || pass[0]=='\0')
+	if(!player_ship || pass[0]=='\0')
 		delete this;
 }
 
@@ -275,8 +275,8 @@ void player::save()
 	database::store_attribute("Password",pass);
 	database::store_attribute("Op",op);
 	database::store_attribute("Cash",cash);
-	if(mshp)
-		mshp->save();
+	if(player_ship)
+		player_ship->save();
 }
 
 void player::load()
@@ -287,24 +287,24 @@ void player::load()
 	op=database::retrieve_attribute("Op");
 	cash=database::retrieve_attribute("Cash");
 	// Safely delete existing ship if it exists
-	if(mshp)
+	if(player_ship)
 	{
-		mshp->ply=NULL;
-		delete mshp;
+		player_ship->assigned_player=NULL;
+		delete player_ship;
 	}
-	mshp=NULL;
+	player_ship=NULL;
 	// Create new ship and load its data
 	try {
-		mshp=new ship();
+		player_ship=new ship();
 		// Ensure ship doesn't point back to player during loading
-		mshp->ply=NULL;
-		mshp->load();
-		// Don't set mshp->ply here - it should remain NULL for saved ships
+		player_ship->assigned_player=NULL;
+		player_ship->load();
+		// Don't set player_ship->assigned_player here - it should remain NULL for saved ships
 	} catch(...) {
 		// If ship loading fails, clean up
-		if(mshp) {
-			delete mshp;
-			mshp=NULL;
+		if(player_ship) {
+			delete player_ship;
+			player_ship=NULL;
 		}
 		throw;
 	}

@@ -54,7 +54,7 @@ void test_sensor_array_operations() {
 		ship* test_ship = ship::libget(0);
 		if (test_ship) {
 			// Test sensor functionality indirectly through visibility
-			bool can_see_self = test_ship->see(test_ship);
+			bool can_see_self = test_ship->can_detect(test_ship);
 			TEST_ASSERT(can_see_self == true, "ship can see itself");
 		} else {
 			TEST_ASSERT(true, "sensor array test skipped (no test ship)");

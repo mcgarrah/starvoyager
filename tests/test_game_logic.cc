@@ -40,7 +40,7 @@ void test_ship_initialization() {
 void test_ship_index_bounds() {
 	// Test ship index bounds
 	for(int i = 0; i < 10; i++) {
-		(void)ship::get(i);
+		(void)ship::find_by_index(i);
 		// Should not crash, may return null
 		TEST_ASSERT(true, "ship::get doesn't crash");
 	}

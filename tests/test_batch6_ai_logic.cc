@@ -51,8 +51,8 @@ void test_enemy_location_algorithms() {
 		ship* test_ship = TestShipFactory::create_functional_test_ship();
 		if (test_ship) {
 			// Test enemy targeting
-			test_ship->enem = nullptr;
-			TEST_ASSERT(test_ship->enem == nullptr, "enemy location algorithms work");
+			test_ship->enemy_target = nullptr;
+			TEST_ASSERT(test_ship->enemy_target == nullptr, "enemy location algorithms work");
 			TestShipFactory::cleanup_test_ship(test_ship);
 		} else {
 			TEST_ASSERT(true, "enemy location test skipped (no test ship)");
@@ -68,8 +68,8 @@ void test_friendly_ship_location() {
 		ship* test_ship = TestShipFactory::create_functional_test_ship();
 		if (test_ship) {
 			// Test friendly targeting
-			test_ship->frnd = nullptr;
-			TEST_ASSERT(test_ship->frnd == nullptr, "friendly ship location works");
+			test_ship->friendly_target = nullptr;
+			TEST_ASSERT(test_ship->friendly_target == nullptr, "friendly ship location works");
 			TestShipFactory::cleanup_test_ship(test_ship);
 		} else {
 			TEST_ASSERT(true, "friendly ship location test skipped (no test ship)");
@@ -104,7 +104,7 @@ void test_autopilot_navigation() {
 		if (test_ship) {
 			// Test autopilot navigation
 			test_ship->aity = ship::AI_AUTOPILOT;
-			test_ship->plnt = nullptr;
+			test_ship->planet_target = nullptr;
 			TEST_ASSERT(test_ship->aity == ship::AI_AUTOPILOT, "autopilot navigation works");
 			TestShipFactory::cleanup_test_ship(test_ship);
 		} else {
@@ -207,9 +207,9 @@ void test_ai_ship_interactions() {
 		ship* ship2 = TestShipFactory::create_functional_test_ship();
 		if (ship1 && ship2) {
 			// Test ship interactions
-			ship1->frnd = ship2;
-			ship2->enem = ship1;
-			TEST_ASSERT(ship1->frnd == ship2, "AI ship interactions work");
+			ship1->friendly_target = ship2;
+			ship2->enemy_target = ship1;
+			TEST_ASSERT(ship1->friendly_target == ship2, "AI ship interactions work");
 			TestShipFactory::cleanup_test_ship(ship1);
 			TestShipFactory::cleanup_test_ship(ship2);
 		} else {
@@ -229,8 +229,8 @@ void test_multi_ship_ai_coordination() {
 			// Test multi-ship coordination
 			leader->aity = ship::AI_FLEET;
 			follower->aity = ship::AI_BUDDY;
-			follower->frnd = leader;
-			TEST_ASSERT(follower->frnd == leader, "multi-ship AI coordination works");
+			follower->friendly_target = leader;
+			TEST_ASSERT(follower->friendly_target == leader, "multi-ship AI coordination works");
 			TestShipFactory::cleanup_test_ship(leader);
 			TestShipFactory::cleanup_test_ship(follower);
 		} else {
@@ -249,9 +249,9 @@ void test_ai_combat_scenarios() {
 		if (attacker && target) {
 			// Test AI combat scenarios
 			attacker->aity = ship::AI_INVADER;
-			attacker->enem = target;
+			attacker->enemy_target = target;
 			target->aity = ship::AI_PATROLLER;
-			TEST_ASSERT(attacker->enem == target, "AI combat scenarios work");
+			TEST_ASSERT(attacker->enemy_target == target, "AI combat scenarios work");
 			TestShipFactory::cleanup_test_ship(attacker);
 			TestShipFactory::cleanup_test_ship(target);
 		} else {
@@ -269,7 +269,7 @@ void test_ai_navigation_accuracy() {
 		if (test_ship) {
 			// Test AI navigation accuracy
 			test_ship->aity = ship::AI_AUTOPILOT;
-			test_ship->plnt = nullptr; // No target planet
+			test_ship->planet_target = nullptr; // No target planet
 			cord original_loc = test_ship->loc;
 			TEST_ASSERT(test_ship->loc.x_component == original_loc.x_component, "AI navigation accuracy works");
 			TestShipFactory::cleanup_test_ship(test_ship);

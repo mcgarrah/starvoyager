@@ -18,7 +18,7 @@ void test_null_pointer_handling() {
 		// Test null pointer handling in operations
 		TestShipFactory::init_test_environment();
 		ship* null_ship = nullptr;
-		ship* invalid_ship = ship::get(-1);
+		ship* invalid_ship = ship::find_by_index(-1);
 		TEST_ASSERT(invalid_ship == nullptr, "invalid ship index returns null");
 		TEST_ASSERT(null_ship == nullptr, "null pointer handling works");
 		
@@ -31,8 +31,8 @@ void test_invalid_index_handling() {
 	try {
 		// Test invalid index handling
 		TestShipFactory::init_test_environment();
-		ship* invalid_ship1 = ship::get(-1);
-		ship* invalid_ship2 = ship::get(999);
+		ship* invalid_ship1 = ship::find_by_index(-1);
+		ship* invalid_ship2 = ship::find_by_index(999);
 		TEST_ASSERT(invalid_ship1 == nullptr, "negative index returns null");
 		TEST_ASSERT(invalid_ship2 == nullptr, "large index returns null");
 		TEST_ASSERT(true, "invalid index handling works");

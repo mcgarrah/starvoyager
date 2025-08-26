@@ -77,7 +77,7 @@ void planet::purgeall()
 			delete planets[i];
 }
 
-planet* planet::get(int indx)
+planet* planet::find_by_index(int indx)
 {
 	if(indx>=0 && indx<ISIZE)
 	{
@@ -92,41 +92,41 @@ planet* planet::get(int indx)
 	}
 }
 
-planet* planet::pick(alliance* tali)
+planet* planet::find_random_planet(alliance* target_alliance)
 {
 	for(int i=0,j=0;i<ISIZE;i++)
 	{
 		j=calc::random_int(ISIZE);
-		if(planets[j] && planets[j]->typ==INHABITED && planets[j]->all==tali)
+		if(planets[j] && planets[j]->typ==INHABITED && planets[j]->all==target_alliance)
 			return planets[j];
 	}
 	//Can't find one by this point, but maybe it's just bad luck
 	//This one is more deterministic, especially as it's often vital to get a result (e.g. when spawning a player's new ship)
 	for(int i=0;i<ISIZE;i++)
 	{
-		if(planets[i] && planets[i]->typ==INHABITED && planets[i]->all==tali)
+		if(planets[i] && planets[i]->typ==INHABITED && planets[i]->all==target_alliance)
 			return planets[i];
 	}
 	return NULL;
 }
 
-planet* planet::find_allied_planet(alliance* tali)
+planet* planet::find_allied_planet(alliance* target_alliance)
 {
 	for(int i=0,j=0;i<ISIZE;i++)
 	{
 		j=calc::random_int(ISIZE);
-		if(planets[j] && planets[j]->typ==INHABITED && !(tali->opposes(planets[j]->all)))
+		if(planets[j] && planets[j]->typ==INHABITED && !(target_alliance->opposes(planets[j]->all)))
 			return planets[j];
 	}
 	return NULL;
 }
 
-planet* planet::find_hostile_planet(alliance* tali)
+planet* planet::find_hostile_planet(alliance* target_alliance)
 {
 	for(int i=0,j=0;i<ISIZE;i++)
 	{
 		j=calc::random_int(ISIZE);
-		if(planets[j] && planets[j]->typ!=STAR && tali->opposes(planets[j]->all))
+		if(planets[j] && planets[j]->typ!=STAR && target_alliance->opposes(planets[j]->all))
 			return planets[j];
 	}
 	return NULL;
@@ -205,11 +205,11 @@ void planet::shipyards()
 	}
 }
 
-int planet::interact(char* txt,short cmod,short opr,ship* mshp)
+int planet::interact(char* txt,short cmod,short opr,ship* player_ship)
 {
 	long cost; //Cost of purchase
 
-	if(!mshp)
+	if(!player_ship)
 		return -1;
 	switch(cmod)
 	{
@@ -217,7 +217,7 @@ int planet::interact(char* txt,short cmod,short opr,ship* mshp)
 		if(opr==-1)
 		{
 			txt+=sprintf(txt,"%s\n",nam);
-			if(mshp->all->opposes(all))
+			if(player_ship->all->opposes(all))
 				txt+=sprintf(txt,"Alignment:%s [hostile]\n",all->nam);
 			else
 				txt+=sprintf(txt,"Alignment:%s\n",all->nam);
@@ -238,20 +238,20 @@ int planet::interact(char* txt,short cmod,short opr,ship* mshp)
 			txt+=sprintf(txt,"\n[1] Lay in a course\n");
 			return spr;
 		}
-		if(opr==1 && this==mshp->plnt)
+		if(opr==1 && this==player_ship->planet_target)
 		{
-			mshp->aity=ship::AI_AUTOPILOT;
+			player_ship->aity=ship::AI_AUTOPILOT;
 		}
 		break;
 
 		case CMOD_HAIL:
-		if(mshp->see(this))
+		if(player_ship->can_detect(this))
 		{
 			if(
 			typ!=INHABITED ||		
 			all->trad==alliance::TRADE_NONE ||
-			(all->trad==alliance::TRADE_CLOSED && mshp->all!=this->all) ||
-			(all->trad==alliance::TRADE_FRIENDS && this->all->opposes(mshp->all))
+			(all->trad==alliance::TRADE_CLOSED && player_ship->all!=this->all) ||
+			(all->trad==alliance::TRADE_FRIENDS && this->all->opposes(player_ship->all))
 			)
 			{
 				txt+=sprintf(txt,"No response");
@@ -266,13 +266,13 @@ int planet::interact(char* txt,short cmod,short opr,ship* mshp)
 		if(opr==-1)
 		{
 			txt+=sprintf(txt,"Hailing %s\n\nServices\n\n",nam);
-			cost=mshp->purchase(ship::PRCH_FUEL,all->ripo,false);
+			cost=player_ship->purchase(ship::PRCH_FUEL,all->ripo,false);
 			if(cost)
 				txt+=sprintf(txt,"[1] Refuel\nCost: %ld C\n",cost);
-			cost=mshp->purchase(ship::PRCH_HULL,all->ripo,false);
+			cost=player_ship->purchase(ship::PRCH_HULL,all->ripo,false);
 			if(cost)
 				txt+=sprintf(txt,"[2] Repair hull\nCost: %ld C\n",cost);
-			cost=mshp->purchase(ship::PRCH_ARMS,all->ripo,false);
+			cost=player_ship->purchase(ship::PRCH_ARMS,all->ripo,false);
 			if(cost)
 				txt+=sprintf(txt,"[3] Rearm one magazine\nCost: %ld C\n",cost);
 			txt+=sprintf(txt,"[4] Purchase equipment\n");
@@ -281,32 +281,32 @@ int planet::interact(char* txt,short cmod,short opr,ship* mshp)
 		if(opr==1 || opr==2 || opr==3)
 		{
 		//	if(opr==1)
-		//		cost=mshp->purchase(ship::PRCH_FUEL,all->ripo,false);
+		//		cost=player_ship->purchase(ship::PRCH_FUEL,all->ripo,false);
 		//	if(opr==2)
-		//		cost=mshp->purchase(ship::PRCH_HULL,all->ripo,false);
+		//		cost=player_ship->purchase(ship::PRCH_HULL,all->ripo,false);
 		//	if(opr==3)
-		//		cost=mshp->purchase(ship::PRCH_ARMS,all->ripo,false);
+		//		cost=player_ship->purchase(ship::PRCH_ARMS,all->ripo,false);
 		//	if(cost>0)
 		//	{
-				mshp->transport(this);
+				player_ship->transport(this);
 				if(opr==1)
-					mshp->purchase(ship::PRCH_FUEL,all->ripo,true);
+					player_ship->purchase(ship::PRCH_FUEL,all->ripo,true);
 				if(opr==2)
-					mshp->purchase(ship::PRCH_HULL,all->ripo,true);
+					player_ship->purchase(ship::PRCH_HULL,all->ripo,true);
 				if(opr==3)
-					mshp->purchase(ship::PRCH_ARMS,all->ripo,true);
+					player_ship->purchase(ship::PRCH_ARMS,all->ripo,true);
 		//	}
 		}
 		break;
 
 		case CMOD_REFIT:
-		if(mshp->see(this))
+		if(player_ship->can_detect(this))
 		{
 			if(
 			typ!=INHABITED ||		
 			all->trad==alliance::TRADE_NONE ||
-			(all->trad==alliance::TRADE_CLOSED && mshp->all!=this->all) ||
-			(all->trad==alliance::TRADE_FRIENDS && this->all->opposes(mshp->all))
+			(all->trad==alliance::TRADE_CLOSED && player_ship->all!=this->all) ||
+			(all->trad==alliance::TRADE_FRIENDS && this->all->opposes(player_ship->all))
 			)
 			{
 				txt+=sprintf(txt,"No response");
@@ -327,18 +327,18 @@ int planet::interact(char* txt,short cmod,short opr,ship* mshp)
 			{
 				if(sold[i])
 				{
-					cost=mshp->purchase(sold[i],all->ripo,false);
+					cost=player_ship->purchase(sold[i],all->ripo,false);
 					txt+=sprintf(txt,"[%hd] %s \nCost: %ld C  Mass: %hd\n",i+1,sold[i]->nam,cost,sold[i]->mass);
 				}
 			}
-			txt+=sprintf(txt,"\nAvailable mass: %hd\n",mshp->get_available_cargo_space());
+			txt+=sprintf(txt,"\nAvailable mass: %hd\n",player_ship->get_available_cargo_space());
 		}
 		if(opr>=1 && opr<=MAX_EQUIPMENT_SLOTS && sold[opr-1])
 		{
-			//cost=mshp->purchase(sold[opr-1],all->ripo,false);
+			//cost=player_ship->purchase(sold[opr-1],all->ripo,false);
 			
-			mshp->transport(this);
-			mshp->purchase(sold[opr-1],all->ripo,true);
+			player_ship->transport(this);
+			player_ship->purchase(sold[opr-1],all->ripo,true);
 			txt+=sprintf(txt,"%s purchased and installed",sold[opr-1]->nam);
 		}
 		break;
@@ -454,23 +454,23 @@ void planet::load()
 void planet::shipyard()
 {
 	cord put; //Location to spawn
-	ship* lshp; //Ship from library
-	ship* tshp; //Ship being spawned
+	ship* template_ship; //Ship from library
+	ship* spawned_ship; //Ship being spawned
 	int aity; //AI type to spawn
 
 	put.x_component=loc.x_component+calc::random_int(SPAWN_RADIUS)-calc::random_int(SPAWN_RADIUS);
 	put.y_component=loc.y_component+calc::random_int(SPAWN_RADIUS)-calc::random_int(SPAWN_RADIUS);
 
-	lshp=all->get_spawn_ship_template();
+	template_ship=all->get_spawn_ship_template();
 	aity=all->get_ai_behavior_type();
-	if(lshp)
+	if(template_ship)
 	{
 		try
 		{
-			tshp=new ship(put,lshp,all,aity);
-			tshp->insert();
-			if(tshp->self==-1)
-				delete tshp;
+			spawned_ship=new ship(put,template_ship,all,aity);
+			spawned_ship->insert();
+			if(spawned_ship->self==-1)
+				delete spawned_ship;
 		}
 		catch(error it)
 		{

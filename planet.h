@@ -24,17 +24,17 @@ class planet //Planet object
 
 	static void init(); //Initialise datastructures for the planet module
 	static void purgeall(); //Cleans up and purges planet data, used after a game
-	static planet* get(int indx); //Return the planet of given index
-	static planet* pick(alliance* tali); //Pick a random planet of given alliance
-	static planet* find_allied_planet(alliance* tali); //Pick a random planet allied to given alliance
-	static planet* find_hostile_planet(alliance* tali); //Pick a random planet hostile to given alliance
+	static planet* find_by_index(int indx); //Return the planet of given index
+	static planet* find_random_planet(alliance* target_alliance); //Pick a random planet of given alliance
+	static planet* find_allied_planet(alliance* target_alliance); //Pick a random planet allied to given alliance
+	static planet* find_hostile_planet(alliance* target_alliance); //Pick a random planet hostile to given alliance
 	static bool masslock(cord loc); //Return whether or not given location is mass-locked by planets
 	static void saveall(); //Save all the planets to the database
 	static void loadall(); //Load all the planets from the database
 	static void generatename(char* put); //Generate a planetary name, put it in put
 	static void shipyards(); //Randomly spawn ships
 
-	int interact(char* txt,short cmod,short opr,ship* mshp); //Handles a server request for information/action from this planet, with the given comm mode, operand and player's ship, writing the text into txt and returning the sprite index (-1 if n/a)
+	int interact(char* txt,short cmod,short opr,ship* player_ship); //Handles a server request for information/action from this planet, with the given comm mode, operand and player's ship, writing the text into txt and returning the sprite index (-1 if n/a)
 	void serialize_to_network(int typ,unsigned char* buf); //Get type of data from planet into a network buffer
 
 	int self; //Self index
