@@ -170,11 +170,11 @@ void splashscreen()
 			graphic::clip(&interface::panelb);
 			graphic::box(&interface::panelb,graphic::BLACK);
 			if(panel)
-				panel->draw(interface::panelb.x+interface::panelb.w/2,interface::panelb.y+interface::panelb.h/2,0,1,0,false);
+				panel->render_to_screen(interface::panelb.x+interface::panelb.w/2,interface::panelb.y+interface::panelb.h/2,0,1,0,false);
 			graphic::clip(&interface::viewb);
 			graphic::box(&interface::viewb,graphic::BLACK);
 			if(logo)
-				logo->draw(interface::viewb.x+interface::viewb.w/2,interface::viewb.y+interface::viewb.h/2,0,1,0,false);
+				logo->render_to_screen(interface::viewb.x+interface::viewb.w/2,interface::viewb.y+interface::viewb.h/2,0,1,0,false);
 			graphic::embed();
 
 			interface::printtocons("Star Voyager %s\n\n[1] Run local game\n[2] Reset game\n[3] Connect to a server\n[4] Quit\n",VERSION);

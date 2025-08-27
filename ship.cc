@@ -926,20 +926,20 @@ void ship::serialize_to_network(int typ,unsigned char* buf)
 
 bool ship::detect_collision(cord fragment_location,vect fragment_velocity)
 {
-	int rot; //Target rotation
+	int rotation_angle; //Target rotation
 	double x1,y1,x2,y2,xx,yy; //Target bounding box
 
-	rot=(int)(((vel.angle_degrees+5)/10))%36;
+	rotation_angle=(int)(((vel.angle_degrees+5)/10))%36;
 	xx=(fragment_velocity.x_component-mov.x_component)/2;
 	yy=(fragment_velocity.y_component-mov.y_component)/2;
 	if(xx<0)
 		xx=-xx;
 	if(yy<0)
 		yy=-yy;
-	x1=loc.x_component-(w[rot]*3)/2-xx;
-	y1=loc.y_component-(h[rot]*3)/2-yy;
-	x2=loc.x_component+(w[rot]*3)/2+xx;
-	y2=loc.y_component+(h[rot]*3)/2+yy;
+	x1=loc.x_component-(w[rotation_angle]*3)/2-xx;
+	y1=loc.y_component-(h[rotation_angle]*3)/2-yy;
+	x2=loc.x_component+(w[rotation_angle]*3)/2+xx;
+	y2=loc.y_component+(h[rotation_angle]*3)/2+yy;
 	if(fragment_location.x_component>x1 && fragment_location.x_component<x2 && fragment_location.y_component>y1 && fragment_location.y_component<y2)
 		return true;
 	else
@@ -950,11 +950,11 @@ void ship::take_damage(int mag,cord fragment_location,vect fragment_velocity,shi
 {
 	cord tmpc;
 	vect tmpv; //Temporary for working out detonations
-	int rot; //Target rotation
+	int rotation_angle; //Target rotation
 	int debris_count; //Number of debris bits
 
 	uncloak();
-	rot=(int)(((vel.angle_degrees+5)/10))%36;
+	rotation_angle=(int)(((vel.angle_degrees+5)/10))%36;
 	if(shield_generator)
 		shield_generator->cap-=mag;
 	server::registershake(this,mag/100);
@@ -1010,8 +1010,8 @@ void ship::take_damage(int mag,cord fragment_location,vect fragment_velocity,shi
 			if(i==0 || calc::random_int(5)==0)
 			{
 				tmpc=loc;
-				tmpc.x_component+=calc::random_int(2*w[rot])-calc::random_int(2*w[rot]);
-				tmpc.y_component+=calc::random_int(2*h[rot])-calc::random_int(2*h[rot]);
+				tmpc.x_component+=calc::random_int(2*w[rotation_angle])-calc::random_int(2*w[rotation_angle]);
+				tmpc.y_component+=calc::random_int(2*h[rotation_angle])-calc::random_int(2*h[rotation_angle]);
 			}
 			tmpv=mov;
 			try

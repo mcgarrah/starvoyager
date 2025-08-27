@@ -24,7 +24,7 @@ void interface::init()
 	edit[0]='\0';
 	inp=false;
 	ent=false;
-	cspr=NULL;
+	console_sprite_index=NULL;
 }
 
 void interface::setup()
@@ -108,17 +108,17 @@ void interface::printtocons(const char* fmt,...)
 
 	inp=false;
 	edit[0]='\0';
-	cspr=NULL;
+	console_sprite_index=NULL;
 	va_start(fmts,fmt);
 	vsprintf(cons,fmt,fmts);
 	va_end(fmts);
 }
 
-void interface::spritetocons(graphic* spr)
+void interface::spritetocons(graphic* sprite_index)
 {
 	inp=false;
 	edit[0]='\0';
-	cspr=spr;
+	console_sprite_index=sprite_index;
 }
 
 void interface::printtomesg(const char* fmt,...)
@@ -181,8 +181,8 @@ void interface::render()
 
 	graphic::clip(&consb);
 
-	if(cspr)
-		cspr->draw(consb.x+consb.w/2,consb.y+consb.h/2,0,1,0,false);
+	if(console_sprite_index)
+		console_sprite_index->render_to_screen(consb.x+consb.w/2,consb.y+consb.h/2,0,1,0,false);
 	cwid=consb.w/6;
 	y=consb.y;
 	p1=cons;
@@ -292,5 +292,5 @@ char* interface::mesg[8];
 char interface::edit[65];
 bool interface::pwd;
 bool interface::ent;
-graphic* interface::cspr;
+graphic* interface::console_sprite_index;
 int interface::mtmo;

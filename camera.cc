@@ -203,7 +203,7 @@ void camera::rendermainview()
 			vptr.y_component+=interface::viewb.y+interface::viewb.h/2;
 			ptr=graphic::get(graphic::NAV);
 			if(ptr)
-				ptr->draw(vptr.x_component,vptr.y_component,(((int)pptr.angle_degrees+5)/10)%36,1,0,false);
+				ptr->render_to_screen(vptr.x_component,vptr.y_component,(((int)pptr.angle_degrees+5)/10)%36,1,0,false);
 			graphic::string(txt,vptr.x_component,vptr.y_component+4,false);
 		}
 	}
@@ -249,7 +249,7 @@ void camera::renderstars()
 		//Draw the star
 		if(warp)
 		{
-			warp->draw(astx,asty,((presence::vel.angle_degrees+5)/10)%36,1,0,false);
+			warp->render_to_screen(astx,asty,((presence::vel.angle_degrees+5)/10)%36,1,0,false);
 		}
 		else
 		{
@@ -267,7 +267,7 @@ void camera::renderradar()
 	long sx,sy; //Screen co-ordinates
 	presence* tprs; //Pointer to objects to draw
 	char txt[50]; //For rendering co-ordinates on radar
-	int col = graphic::WHITE; //Color to use on radar
+	int color_index = graphic::WHITE; //Color to use on radar
 	sbox tbox; //Target drawing box
 	ipol pdir;
 	ivect vdir; //Direction of travel
@@ -317,9 +317,9 @@ void camera::renderradar()
 				if(tprs==presence::me)
 				{
 					if(flck)
-						col=graphic::RED;
+						color_index=graphic::RED;
 					else
-						col=graphic::BLUE;
+						color_index=graphic::BLUE;
 				}
 				else
 				{
@@ -327,17 +327,17 @@ void camera::renderradar()
 					{
 						case PT_SHIP:
 						if(tprs->enem)
-							col=graphic::RED;
+							color_index=graphic::RED;
 						else
-							col=graphic::WHITE;
+							color_index=graphic::WHITE;
 						break;
 
 						case PT_PLANET:
-						col=graphic::GREEN;
+						color_index=graphic::GREEN;
 						break;
 
 						case PT_FRAG:
-						col=graphic::BLUE;
+						color_index=graphic::BLUE;
 						break;
 					}
 				}
@@ -361,13 +361,13 @@ void camera::renderradar()
 					if(tprs==presence::hl)
 					{
 						if(flck)
-							graphic::box(&tbox,col);
+							graphic::box(&tbox,color_index);
 					}
 					else
-						graphic::box(&tbox,col);
+						graphic::box(&tbox,color_index);
 				}
 				else
-					graphic::pix(sx,sy,col);
+					graphic::pix(sx,sy,color_index);
 			}
 		}
 	}

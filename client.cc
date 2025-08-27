@@ -78,7 +78,7 @@ void client::poll()
 	unsigned char otyp; //Incoming object type
 	unsigned char* buf; //Incoming buffer to use
 	sound* snd; //Sound to play
-	graphic* cspr; //Console sprite
+	graphic* console_sprite_index; //Console sprite
 	int n; //Array subscript to access
 	long cbnd; //Client bandwidth usage to report
 	presence* from; //Sound source if applicable
@@ -103,7 +103,7 @@ void client::poll()
 			buf=hlpr->request(SERV_SELF_SZ);
 			if(buf)
 			{
-				presence::feed(buf);
+				presence::update_display_data(buf);
 				hlpr->suck();
 			}
 			else
@@ -114,7 +114,7 @@ void client::poll()
 			buf=hlpr->request(SERV_NEW_SZ);
 			if(buf)
 			{
-				presence::feed(buf);
+				presence::update_display_data(buf);
 				hlpr->suck();
 			}
 			else
@@ -125,7 +125,7 @@ void client::poll()
 			buf=hlpr->request(SERV_NAME_SZ);
 			if(buf)
 			{
-				presence::feed(buf);
+				presence::update_display_data(buf);
 				hlpr->suck();
 			}
 			else
@@ -136,7 +136,7 @@ void client::poll()
 			buf=hlpr->request(SERV_UPD_SZ);
 			if(buf)
 			{
-				presence::feed(buf);
+				presence::update_display_data(buf);
 				hlpr->suck();
 			}
 			else
@@ -147,7 +147,7 @@ void client::poll()
 			buf=hlpr->request(SERV_DEL_SZ);
 			if(buf)
 			{
-				presence::feed(buf);
+				presence::update_display_data(buf);
 				hlpr->suck();
 			}
 			else
@@ -158,7 +158,7 @@ void client::poll()
 			buf=hlpr->request(SERV_HILIGHT_SZ);
 			if(buf)
 			{
-				presence::feed(buf);
+				presence::update_display_data(buf);
 				hlpr->suck();
 			}
 			else
@@ -271,9 +271,9 @@ void client::poll()
 			buf=hlpr->request(3);
 			if(buf)
 			{
-				cspr=graphic::get(calc::dattoint(buf+1));
-				if(cspr)
-					interface::spritetocons(cspr);
+				console_sprite_index=graphic::get(calc::dattoint(buf+1));
+				if(console_sprite_index)
+					interface::spritetocons(console_sprite_index);
 				hlpr->suck();
 			}
 			else

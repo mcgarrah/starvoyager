@@ -605,11 +605,11 @@ void server::changecmod(int opr)
 	char* txtp;
 	char txt[1024]; //Text buffer for constructing output
 	alliance* target_alliance; //Alliance for possible choosing
-	int spr; //Sprite to spritetocons with
+	int sprite_index; //Sprite to spritetocons with
 
 	cmod=opr;
 	txtp=txt;
-	spr=-1;
+	sprite_index=-1;
 	txt[0]='\0';
 	if(ply && ply->in)
 	{
@@ -654,9 +654,9 @@ void server::changecmod(int opr)
 		break;
 
 		case CMOD_STAT:
-		spr=ply->in->interact(txt,CMOD_STAT,-1,ply->in);
+		sprite_index=ply->in->interact(txt,CMOD_STAT,-1,ply->in);
 		printtocons(txt);
-		spritetocons(spr);
+		spritetocons(sprite_index);
 		break;
 		case CMOD_EQUIP:
 		ply->in->interact(txt,CMOD_EQUIP,-1,ply->in);
@@ -666,17 +666,17 @@ void server::changecmod(int opr)
 		case CMOD_SCAN:
 		if(ply->in->enemy_target)
 		{
-			spr=ply->in->enemy_target->interact(txt,CMOD_SCAN,-1,ply->in);
+			sprite_index=ply->in->enemy_target->interact(txt,CMOD_SCAN,-1,ply->in);
 			printtocons(txt);
-			spritetocons(spr);
+			spritetocons(sprite_index);
 		}
 		else
 		{
 			if(ply->in->planet_target)
 			{
-				spr=ply->in->planet_target->interact(txt,CMOD_SCAN,-1,ply->in);
+				sprite_index=ply->in->planet_target->interact(txt,CMOD_SCAN,-1,ply->in);
 				printtocons(txt);
-				spritetocons(spr);
+				spritetocons(sprite_index);
 			}
 			else
 			{
@@ -756,7 +756,7 @@ void server::changecmod(int opr)
 			if(ply->in->enemy_target)
 			{
 				remaining = sizeof(txt) - (txtp - txt);
-				spr=ply->in->enemy_target->interact(txtp,CMOD_WHOIS,-1,ply->in);
+				sprite_index=ply->in->enemy_target->interact(txtp,CMOD_WHOIS,-1,ply->in);
 				txtp=txt+strlen(txt);
 			}
 			else {
@@ -769,7 +769,7 @@ void server::changecmod(int opr)
 			if(written > 0 && written < remaining) txtp += written;
 		}
 		printtocons(txt);
-		spritetocons(spr);
+		spritetocons(sprite_index);
 		break;
 
 		case CMOD_HACK:

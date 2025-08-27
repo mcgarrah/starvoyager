@@ -17,7 +17,7 @@ class presence //Client side view of the universe and its simple objects
 	enum {ISIZE=2048}; //Size of presence object index
 	static void init(); //Initialise the presence system datastructures
 	static void purgeall(); //Purge all presence data after use
-	static void feed(unsigned char* buf); //Update/create a presence from a buffer
+	static void update_display_data(unsigned char* buf); //Update/create a presence from a buffer
 	static void interpolateall(); //Run interpolation on all the presence objects
 	static presence* get(int indx); //Return the presence object of given index
 	static void render(); //Render client/presence info, such as realtime information indicators

@@ -153,7 +153,7 @@ void graphic::string(char* str,int x,short y,bool opq)
 	}
 }
 
-void graphic::box(sbox* box,int col)
+void graphic::box(sbox* box,int color_index)
 {
 	SDL_Rect rect; //Rectangle to draw
 
@@ -161,7 +161,7 @@ void graphic::box(sbox* box,int col)
 	rect.y=box->y;
 	rect.w=box->w;
 	rect.h=box->h;
-	SDL_FillRect(screen,&rect,cols[col]);
+	SDL_FillRect(screen,&rect,cols[color_index]);
 	if(nd<MAX_DRAW_OPERATIONS)
 	{
 		dtyp[nd]=DTYP_RECT;
@@ -188,10 +188,10 @@ void graphic::clip(sbox* box)
 	}
 }
 
-void graphic::pix(int x,short y,short col)
+void graphic::pix(int x,short y,short color_index)
 {
 	Uint8 r,g,b;
-	SDL_GetRGB(cols[col],screen->format,&r,&g,&b);
+	SDL_GetRGB(cols[color_index],screen->format,&r,&g,&b);
 	pixelColor(screen,x,y,(r<<24)|(g<<16)|(b<<8)|0xFF);
 	if(nd<MAX_DRAW_OPERATIONS)
 	{
@@ -213,12 +213,12 @@ sbox graphic::dimension()
 	return out;
 }
 
-void graphic::line(int x1,short y1,short x2,short y2,short col)
+void graphic::line(int x1,short y1,short x2,short y2,short color_index)
 {
-	if(col>=0 && col<16)
+	if(color_index>=0 && color_index<16)
 	{
 		Uint8 r,g,b;
-		SDL_GetRGB(cols[col],screen->format,&r,&g,&b);
+		SDL_GetRGB(cols[color_index],screen->format,&r,&g,&b);
 		lineColor(screen,x1,y1,x2,y2,(r<<24)|(g<<16)|(b<<8)|0xFF);
 		if(nd<MAX_DRAW_OPERATIONS)
 		{
@@ -232,7 +232,7 @@ void graphic::line(int x1,short y1,short x2,short y2,short col)
 	}
 }
 
-void graphic::draw(int x,short y,short rot,short zout,short haze,bool trg)
+void graphic::render_to_screen(int x,short y,short rotation_angle,short zout,short haze,bool trg)
 {
 	graphic* tspr; //Targetting sprite
 	SDL_Rect dst; //Destination rect
@@ -244,26 +244,26 @@ void graphic::draw(int x,short y,short rot,short zout,short haze,bool trg)
 	}
 	else
 	{
-		if(!(rot>=0 && rot<36 && zout>=0 && zout<4))
+		if(!(rotation_angle>=0 && rotation_angle<36 && zout>=0 && zout<4))
 			return;
-		if(!rots[rot][zout-1])
-			calculate(rot,zout);
-		hw=(rots[rot][zout-1]->w)/2;
-		hh=(rots[rot][zout-1]->h)/2;
+		if(!rots[rotation_angle][zout-1])
+			calculate(rotation_angle,zout);
+		hw=(rots[rotation_angle][zout-1]->w)/2;
+		hh=(rots[rotation_angle][zout-1]->h)/2;
 		dst.x=x-hw;
 		dst.y=y-hh;
 		dst.w=hw*2;
 		dst.h=hh*2;
-		SDL_BlitSurface(rots[rot][zout-1],NULL,screen,&dst);
+		SDL_BlitSurface(rots[rotation_angle][zout-1],NULL,screen,&dst);
 		if(trg)
 		{
 			tspr=get(TRG);
 			if(tspr)
 			{
-				tspr->draw(x,y-hh,0,1,0,false);
-				tspr->draw(x,y+hh,18,1,0,false);
-				tspr->draw(x-hw,y,27,1,0,false);
-				tspr->draw(x+hw,y,9,1,0,false);
+				tspr->render_to_screen(x,y-hh,0,1,0,false);
+				tspr->render_to_screen(x,y+hh,18,1,0,false);
+				tspr->render_to_screen(x-hw,y,27,1,0,false);
+				tspr->render_to_screen(x+hw,y,9,1,0,false);
 			}
 		}
 		if(nd<MAX_DRAW_OPERATIONS)
@@ -363,17 +363,17 @@ void graphic::load()
 	calculate(0,1);
 }
 
-void graphic::calculate(int rot,short zout)
+void graphic::calculate(int rotation_angle,short zout)
 {
 	int ang; //Angle to rotate by
 
-	ang=360-rot*10;
+	ang=360-rotation_angle*10;
 	if(self>=16)
-		rots[rot][zout-1]=rotozoomSurface(orig,ang,1.0/zout,1);
+		rots[rotation_angle][zout-1]=rotozoomSurface(orig,ang,1.0/zout,1);
 	else
-		rots[rot][zout-1]=rotozoomSurface(orig,ang,1.0/zout,0);
-	SDL_SetColorKey(rots[rot][zout-1],SDL_SRCCOLORKEY|SDL_RLEACCEL,cols[BLACK]);
-	if(!rots[rot][zout-1])
+		rots[rotation_angle][zout-1]=rotozoomSurface(orig,ang,1.0/zout,0);
+	SDL_SetColorKey(rots[rotation_angle][zout-1],SDL_SRCCOLORKEY|SDL_RLEACCEL,cols[BLACK]);
+	if(!rots[rotation_angle][zout-1])
 		throw error(SDL_GetError());
 }
 

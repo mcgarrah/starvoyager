@@ -43,7 +43,7 @@ void presence::purgeall()
 	init();
 }
 
-void presence::feed(unsigned char* buf)
+void presence::update_display_data(unsigned char* buf)
 {
 	int id; //Id to use
 
@@ -222,26 +222,26 @@ void presence::controls()
 
 void presence::drawat(int sx,short sy,short zout)
 {
-	int rot; //Rotation frame to use
+	int rotation_angle; //Rotation frame to use
 	long lx,ly; //Co-ordinates of 'link' presence
 	long thx,thy; //Thickness offsets
 	graphic* pspr; //Graphic for marking position while cloaked
 	if(spr)
 	{
-		rot=((ang+5)/10)%36;
-		if(rot<0)
-			rot+=36;
+		rotation_angle=((ang+5)/10)%36;
+		if(rotation_angle<0)
+			rotation_angle+=36;
 		if(vis)
 		{
 			if(this==trg)
-				spr->draw(sx,sy,rot,zout,100-vis,true);
+				spr->render_to_screen(sx,sy,rotation_angle,zout,100-vis,true);
 			else
-				spr->draw(sx,sy,rot,zout,100-vis,false);
+				spr->render_to_screen(sx,sy,rotation_angle,zout,100-vis,false);
 		}
 		else
 		{
 			pspr=graphic::get(graphic::POS);
-			pspr->draw(sx,sy,rot,1,0,false);
+			pspr->render_to_screen(sx,sy,rotation_angle,1,0,false);
 		}	
 	}
 	if(col>=0 && link)
