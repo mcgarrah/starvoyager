@@ -116,7 +116,7 @@ void game::runlocal()
 			lreg.tick();
 
 			presence::interpolateall();
-			client::poll();
+			client::process_network_messages();
 			camera::update();
 			frame_counter+=100;
 			if(frame_counter>=frame_drop_rate)
@@ -176,7 +176,7 @@ void game::runclient(char* host)
 			lreg.tick();
 
 			presence::interpolateall();
-			client::poll();
+			client::process_network_messages();
 			camera::update();
 			frame_counter+=100;
 			if(frame_counter>=frame_drop_rate)

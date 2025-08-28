@@ -17,8 +17,8 @@ class client //Module to handle connection to servers
 	static void stop(); //Clean up and terminate client, disconnecting from the server
 	static void connect(const char* host); //Connect to given host
 	static void flush(); //Flush connection buffers
-	static void poll(); //Run the client for a cycle, polling for new objects and acting on them
-	static void action(int typ,long opr); //Send an action to the server, given action number and operand
+	static void process_network_messages(); //Run the client for a cycle, polling for new objects and acting on them
+	static void action(int typ,long operation_code); //Send an action to the server, given action number and operand
 
 	private:
 	static void readln(); //Handles a server readline request until it's done, with password hiding style optional
@@ -26,7 +26,7 @@ class client //Module to handle connection to servers
 	static bool edit; //In edit mode?
 	static bool hide; //In passworded edit?
 	static TCPsocket sock; //TCP socket to server
-	static sockhelper* hlpr; //Socket wrapper
+	static sockhelper* socket_helper; //Socket wrapper
 	static int btck; //Byte count ticker
 	static int sync; //Synchronisation counter
 };

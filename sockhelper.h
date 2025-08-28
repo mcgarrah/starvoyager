@@ -16,7 +16,7 @@ class sockhelper //Class that helps with socket operations, giving them much eas
 	void pump(); //Pump scheduled outgoing data, fill incoming buffer
 	void send(unsigned char* data,int len); //Schedule data of given length to be sent
 	unsigned char* request(int len); //Request incoming data of given length, returns null if not enough in the buffer
-	void suck(); //Way to roll on the stream after a request has been used and totally done with
+	void receive_data(); //Way to roll on the stream after a request has been used and totally done with
 	long getcount(); //Get the socket throughput byte count, and reset it to zero
 
 	private:

@@ -91,7 +91,7 @@ unsigned char* sockhelper::request(int len)
 	}
 }
 
-void sockhelper::suck()
+void sockhelper::receive_data()
 {
 	if(take>0)
 	{

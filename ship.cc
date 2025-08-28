@@ -536,17 +536,17 @@ bool ship::can_detect(frag* tfrg)
 	return true;		
 }
 
-int ship::interact(char* txt,short cmod,short opr,ship* player_ship)
+int ship::interact(char* txt,short communication_mode,short operation_code,ship* player_ship)
 {
 	char spd[32]; //Speed
 
 	if(!(player_ship && player_ship->assigned_player))
 		return -1;
-	switch(cmod)
+	switch(communication_mode)
 	{
 		case CMOD_STAT:
 		case CMOD_SCAN:
-		if(opr==-1)
+		if(operation_code==-1)
 		{
 			if(player_ship->can_detect(this))
 			{
@@ -595,7 +595,7 @@ int ship::interact(char* txt,short cmod,short opr,ship* player_ship)
 				return -1;
 			}
 		}
-		if(opr==1 && this==player_ship->enemy_target)
+		if(operation_code==1 && this==player_ship->enemy_target)
 		{
 			player_ship->aity=AI_AUTOPILOT;
 		}
@@ -615,7 +615,7 @@ int ship::interact(char* txt,short cmod,short opr,ship* player_ship)
 				}
 			}
 		}
-		if(opr==-1)
+		if(operation_code==-1)
 		{
 			txt+=sprintf(txt,"Internal systems\n\n");
 			for(int i=0;i<32;i++)
@@ -657,19 +657,19 @@ int ship::interact(char* txt,short cmod,short opr,ship* player_ship)
 			txt+=sprintf(txt,"\n[3] Select equipment\n");
 			txt+=sprintf(txt,"[4] Jettison selection\n");
 		}
-		if(opr==1) {
+		if(operation_code==1) {
 			if(shield_generator && shield_generator->rdy==-1)
 				shieldsup();
 			else
 				shieldsdown();
 		}
-		if(opr==2) {
+		if(operation_code==2) {
 			if(cloaking_device && cloaking_device->rdy==-1)
 				cloak();
 			else
 				uncloak();
 		}
-		if(opr==3)
+		if(operation_code==3)
 		{
 			for(int i=0,j=selected_equipment_index+1;i<32;i++,j++)
 			{
@@ -682,7 +682,7 @@ int ship::interact(char* txt,short cmod,short opr,ship* player_ship)
 				}
 			}
 		}
-		if(opr==4)
+		if(operation_code==4)
 		{
 			if(selected_equipment_index>=0 && selected_equipment_index<32 && slots[selected_equipment_index].item)
 			{
@@ -705,12 +705,12 @@ int ship::interact(char* txt,short cmod,short opr,ship* player_ship)
 		case CMOD_HAIL:
 		if(is_crippled)
 		{
-			if(opr==-1)
+			if(operation_code==-1)
 			{
 				txt+=sprintf(txt,"Hailing ship\n\n");
 				txt+=sprintf(txt,"Vessel is disabled\n\n[1] Attempt to recover it");
 			}
-			if(opr==1)
+			if(operation_code==1)
 			{
 				player_ship->transport(this);
 				enemy_target=NULL;
@@ -727,12 +727,12 @@ int ship::interact(char* txt,short cmod,short opr,ship* player_ship)
 		{
 			if(friendly_target==player_ship)
 			{
-				if(opr==-1)
+				if(operation_code==-1)
 				{
 					txt+=sprintf(txt,"Hailing ship\n\n");
 					txt+=sprintf(txt,"Vessel is under your command\n\n[1] Transfer to this vessel");
 				}
-				if(opr==1)
+				if(operation_code==1)
 				{
 					try
 					{

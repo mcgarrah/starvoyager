@@ -21,7 +21,7 @@
 void client::init()
 {
 	sock=NULL;
-	hlpr=NULL;
+	socket_helper=NULL;
 	edit=false;
 }
 
@@ -36,14 +36,14 @@ void client::stop()
 		}
 		sock=NULL;
 	}
-	if(hlpr)
+	if(socket_helper)
 	{
 		try {
-			delete hlpr;
+			delete socket_helper;
 		} catch(...) {
 			// Ignore helper deletion errors during cleanup
 		}
-		hlpr=NULL;
+		socket_helper=NULL;
 	}
 }
 
@@ -58,25 +58,25 @@ void client::connect(const char* host)
 	if(!sock)
 		throw error("Could not connect to server");
 	try {
-		hlpr=new sockhelper(sock);
+		socket_helper=new sockhelper(sock);
 	} catch(...) {
 		SDLNet_TCP_Close(sock);
 		sock=NULL;
 		throw error("Failed to create socket helper");
 	}
-	hlpr->send((unsigned char*)SIGN,strlen(SIGN));
+	socket_helper->send((unsigned char*)SIGN,strlen(SIGN));
 	btck=0;
 }
 
 void client::flush()
 {
-	hlpr->pump();
+	socket_helper->pump();
 }
 
-void client::poll()
+void client::process_network_messages()
 {
 	unsigned char otyp; //Incoming object type
-	unsigned char* buf; //Incoming buffer to use
+	unsigned char* network_buffer; //Incoming buffer to use
 	sound* snd; //Sound to play
 	graphic* console_sprite_index; //Console sprite
 	int n; //Array subscript to access
@@ -86,142 +86,142 @@ void client::poll()
 	char txt[1025]; //Text to print to console
 	bool exl; //Loop exiting flag
 
-	hlpr->pump();
+	socket_helper->pump();
 	btck=(btck+1)%24;
 	if(btck==0)
 	{
-		cbnd=hlpr->getcount();
+		cbnd=socket_helper->getcount();
 		action(CLIENT_BANDWIDTH,cbnd);
 	}
 	exl=false;
-	while(!exl && hlpr->request(1))
+	while(!exl && socket_helper->request(1))
 	{
-		otyp=*hlpr->request(1);
+		otyp=*socket_helper->request(1);
 		switch(otyp)
 		{
 			case SERV_SELF:
-			buf=hlpr->request(SERV_SELF_SZ);
-			if(buf)
+			network_buffer=socket_helper->request(SERV_SELF_SZ);
+			if(network_buffer)
 			{
-				presence::update_display_data(buf);
-				hlpr->suck();
+				presence::update_display_data(network_buffer);
+				socket_helper->receive_data();
 			}
 			else
 				exl=true;
 			break;
 
 			case SERV_NEW:
-			buf=hlpr->request(SERV_NEW_SZ);
-			if(buf)
+			network_buffer=socket_helper->request(SERV_NEW_SZ);
+			if(network_buffer)
 			{
-				presence::update_display_data(buf);
-				hlpr->suck();
+				presence::update_display_data(network_buffer);
+				socket_helper->receive_data();
 			}
 			else
 				exl=true;
 			break;
 
 			case SERV_NAME:
-			buf=hlpr->request(SERV_NAME_SZ);
-			if(buf)
+			network_buffer=socket_helper->request(SERV_NAME_SZ);
+			if(network_buffer)
 			{
-				presence::update_display_data(buf);
-				hlpr->suck();
+				presence::update_display_data(network_buffer);
+				socket_helper->receive_data();
 			}
 			else
 				exl=true;
 			break;
 
 			case SERV_UPD:
-			buf=hlpr->request(SERV_UPD_SZ);
-			if(buf)
+			network_buffer=socket_helper->request(SERV_UPD_SZ);
+			if(network_buffer)
 			{
-				presence::update_display_data(buf);
-				hlpr->suck();
+				presence::update_display_data(network_buffer);
+				socket_helper->receive_data();
 			}
 			else
 				exl=true;
 			break;
 
 			case SERV_DEL:
-			buf=hlpr->request(SERV_DEL_SZ);
-			if(buf)
+			network_buffer=socket_helper->request(SERV_DEL_SZ);
+			if(network_buffer)
 			{
-				presence::update_display_data(buf);
-				hlpr->suck();
+				presence::update_display_data(network_buffer);
+				socket_helper->receive_data();
 			}
 			else
 				exl=true;
 			break;
 
 			case SERV_HILIGHT:
-			buf=hlpr->request(SERV_HILIGHT_SZ);
-			if(buf)
+			network_buffer=socket_helper->request(SERV_HILIGHT_SZ);
+			if(network_buffer)
 			{
-				presence::update_display_data(buf);
-				hlpr->suck();
+				presence::update_display_data(network_buffer);
+				socket_helper->receive_data();
 			}
 			else
 				exl=true;
 			break;
 
 			case SERV_SND:
-			buf=hlpr->request(SERV_SND_SZ);
-			if(buf)
+			network_buffer=socket_helper->request(SERV_SND_SZ);
+			if(network_buffer)
 			{
-				snd=sound::get(calc::dattoint(buf+1));
+				snd=sound::get(calc::dattoint(network_buffer+1));
 				if(snd)
 					snd->play(1);
-				hlpr->suck();
+				socket_helper->receive_data();
 			}
 			else
 				exl=true;
 			break;
 
 			case SERV_NOISE:
-			buf=hlpr->request(SERV_NOISE_SZ);
-			if(buf)
+			network_buffer=socket_helper->request(SERV_NOISE_SZ);
+			if(network_buffer)
 			{
-				snd=sound::get(calc::dattoint(buf+1));
-				n=calc::dattoint(buf+3);
+				snd=sound::get(calc::dattoint(network_buffer+1));
+				n=calc::dattoint(network_buffer+3);
 				if(n>=0 && n<presence::ISIZE)
 					from=presence::get(n);
 				else
 					from=NULL;
 				if(snd && from)
 					camera::noise(snd,from);
-				hlpr->suck();
+				socket_helper->receive_data();
 			}
 			else
 				exl=true;
 			break;
 
 			case SERV_SHAKE:
-			buf=hlpr->request(SERV_SHAKE_SZ);
-			if(buf)
+			network_buffer=socket_helper->request(SERV_SHAKE_SZ);
+			if(network_buffer)
 			{
-				camera::shake(calc::dattoint(buf+1));
-				hlpr->suck();
+				camera::shake(calc::dattoint(network_buffer+1));
+				socket_helper->receive_data();
 			}
 			else
 				exl=true;
 			break;
 
 			case SERV_CONS:
-			buf=hlpr->request(3);
-			if(buf)
+			network_buffer=socket_helper->request(3);
+			if(network_buffer)
 			{
 				edit=false;
-				len=calc::dattoint(buf+1);
+				len=calc::dattoint(network_buffer+1);
 				if(len>1024)
 					throw error("Overflow from server in SERV_CONS");
-				buf=hlpr->request(3+len);
-				if(buf)
+				network_buffer=socket_helper->request(3+len);
+				if(network_buffer)
 				{
-					memcpy(txt,buf+3,len);
+					memcpy(txt,network_buffer+3,len);
 					txt[len]='\0';
 					interface::printtocons("%s\n",txt);
-					hlpr->suck();
+					socket_helper->receive_data();
 				}
 				else
 					exl=true;
@@ -231,34 +231,34 @@ void client::poll()
 			break;
 
 			case SERV_READLN:
-			buf=hlpr->request(SERV_READLN_SZ);
-			if(buf)
+			network_buffer=socket_helper->request(SERV_READLN_SZ);
+			if(network_buffer)
 			{
 				edit=true;
-				if(buf[1])
+				if(network_buffer[1])
 					hide=true;
 				else
 					hide=false;
-				hlpr->suck();
+				socket_helper->receive_data();
 			}
 			else
 				exl=true;
 			break;
 
 			case SERV_MESG:
-			buf=hlpr->request(3);
-			if(buf)
+			network_buffer=socket_helper->request(3);
+			if(network_buffer)
 			{
-				len=calc::dattoint(buf+1);
+				len=calc::dattoint(network_buffer+1);
 				if(len>128)
 					throw error("Overflow from server in SERV_MESG");
-				buf=hlpr->request(3+len);
-				if(buf)
+				network_buffer=socket_helper->request(3+len);
+				if(network_buffer)
 				{
-					memcpy(txt,buf+3,len);
+					memcpy(txt,network_buffer+3,len);
 					txt[len]='\0';
 					interface::printtomesg("%s",txt);
-					hlpr->suck();
+					socket_helper->receive_data();
 				}
 				else
 					exl=true;
@@ -268,25 +268,25 @@ void client::poll()
 			break;
 
 			case SERV_CSPR:
-			buf=hlpr->request(3);
-			if(buf)
+			network_buffer=socket_helper->request(3);
+			if(network_buffer)
 			{
-				console_sprite_index=graphic::get(calc::dattoint(buf+1));
+				console_sprite_index=graphic::get(calc::dattoint(network_buffer+1));
 				if(console_sprite_index)
 					interface::spritetocons(console_sprite_index);
-				hlpr->suck();
+				socket_helper->receive_data();
 			}
 			else
 				exl=true;
 			break;
 
 			case SERV_FLOOD:
-			buf=hlpr->request(SERV_FLOOD_SZ);
-			if(buf)
+			network_buffer=socket_helper->request(SERV_FLOOD_SZ);
+			if(network_buffer)
 			{
-				hlpr->suck();
+				socket_helper->receive_data();
 			}
-			hlpr->pump();
+			socket_helper->pump();
 			break;
 
 			default:
@@ -294,22 +294,22 @@ void client::poll()
 			break;
 		}
 	}
-	hlpr->pump();
+	socket_helper->pump();
 	if(edit)
 		readln();
 }
 
-void client::action(int typ,long opr)
+void client::action(int typ,long operation_code)
 {
 	unsigned char buf[3]; //Outgoing buffer
 
-	if(opr>32767)
-		opr=32767;
-	if(opr<-32766)
-		opr=-32766;
+	if(operation_code>32767)
+		operation_code=32767;
+	if(operation_code<-32766)
+		operation_code=-32766;
 	buf[0]=(unsigned char)typ;
-	calc::inttodat(opr,buf+1);
-	hlpr->send(buf,3);
+	calc::inttodat(operation_code,buf+1);
+	socket_helper->send(buf,3);
 }
 
 void client::readln()
@@ -331,5 +331,5 @@ void client::readln()
 bool client::edit;
 bool client::hide;
 TCPsocket client::sock;
-sockhelper* client::hlpr;
+sockhelper* client::socket_helper;
 int client::btck;

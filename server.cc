@@ -109,7 +109,7 @@ void server::cycle()
 		{
 			try
 			{
-				connections[i]->poll();
+				connections[i]->process_network_messages();
 				connections[i]->uploads();
 			}
 			catch(error it)
@@ -236,8 +236,8 @@ void server::registernoise(ship* fr,int snd)
 		if(connections[i] && connections[i]->ply && connections[i]->ply->in && connections[i]->lsnd!=snd && connections[i]->ply->in->can_detect(fr))
 		{	
 			connections[i]->lsnd=snd;	
-			if(connections[i]->hlpr)
-				connections[i]->hlpr->send(buf,SERV_NOISE_SZ);
+			if(connections[i]->socket_helper)
+				connections[i]->socket_helper->send(buf,SERV_NOISE_SZ);
 		}
 	}
 }
@@ -253,8 +253,8 @@ void server::registersound(ship* to,int snd)
 			connections[i]->lsnd=snd;
 			buf[0]=SERV_SND;
 			calc::inttodat(snd,buf+1);
-			if(connections[i]->hlpr)
-				connections[i]->hlpr->send(buf,SERV_SND_SZ);
+			if(connections[i]->socket_helper)
+				connections[i]->socket_helper->send(buf,SERV_SND_SZ);
 		}
 
 	}
@@ -270,8 +270,8 @@ void server::registershake(ship* to,int mag)
 		{
 			buf[0]=SERV_SHAKE;
 			calc::inttodat(mag,buf+1);
-			if(connections[i]->hlpr)
-				connections[i]->hlpr->send(buf,SERV_SHAKE_SZ);
+			if(connections[i]->socket_helper)
+				connections[i]->socket_helper->send(buf,SERV_SHAKE_SZ);
 		}
 
 	}
@@ -289,14 +289,14 @@ server::server(int self,TCPsocket sock)
 
 	this->self=self;
 	this->sock=sock;
-	hlpr=NULL;
-	hlpr=new sockhelper(sock);
-	if(!hlpr)
+	socket_helper=NULL;
+	socket_helper=new sockhelper(sock);
+	if(!socket_helper)
 		throw error("Failed to allocate sockhelper");
-	hlpr->pump();
+	socket_helper->pump();
 	auth=false;
 	lsnd=-1;
-	inpb[0]='\0';
+	network_buffer[0]='\0';
 	ply=NULL;
 	foc=-1;
 	shpu=new bool[ship::ISIZE];
@@ -326,8 +326,8 @@ server::~server()
 
 	log("Connection terminated");
 	connections[self]=NULL;
-	if(hlpr)
-		delete hlpr;
+	if(socket_helper)
+		delete socket_helper;
 	SDLNet_TCP_Close(sock);
 }
 
@@ -383,14 +383,14 @@ void server::log(const char* fmt,...)
 	fflush(logf);
 }
 
-void server::poll()
+void server::process_network_messages()
 {
 	int action_type, operation; //Action description
-	unsigned char* buf; //Incoming data buffer
+	unsigned char* network_buffer; //Incoming data buffer
 	long sbnd; //Server bandwidth used by this player
 	unsigned char fldb[SERV_FLOOD_SZ]; //Flooding buffer
 
-	hlpr->pump();
+	socket_helper->pump();
 	tout++;
 	if(tout>200)
 		throw error("Activity timeout");
@@ -401,23 +401,23 @@ void server::poll()
 			acth[i]=false;
 		for(int i=0;i<4;i++)
 		{
-			buf=hlpr->request(3);
-			if(buf)
+			network_buffer=socket_helper->request(3);
+			if(network_buffer)
 			{
-				action_type=((int)buf[0]);
-				operation=calc::dattoint(buf+1);
+				action_type=((int)network_buffer[0]);
+				operation=calc::dattoint(network_buffer+1);
 
 				if(action_type>=0 && action_type<32)
 				{
 					if(action_type==CLIENT_CHAR || !acth[action_type])
 					{
 						action(action_type,operation);
-						hlpr->suck();
+						socket_helper->receive_data();
 					}
 					acth[action_type]=true;
 				}
 				else
-					hlpr->suck();
+					socket_helper->receive_data();
 			}
 			else
 				break;
@@ -426,24 +426,24 @@ void server::poll()
 	}
 	else
 	{
-		buf=hlpr->request(6);
-		if(buf)
+		network_buffer=socket_helper->request(6);
+		if(network_buffer)
 		{
-			if(calc::data_arrays_equal((unsigned char*)SIGN,buf,6))
+			if(calc::data_arrays_equal((unsigned char*)SIGN,network_buffer,6))
 				auth=true;
 			else
 				throw error("Using incorrect protocol");
-			hlpr->suck();
+			socket_helper->receive_data();
 			fldb[0]=SERV_FLOOD;
 			memset(fldb+1, 0, SERV_FLOOD_SZ-1);
 			for(int i=0;i<110;i++)
-				hlpr->send(fldb,SERV_FLOOD_SZ);
+				socket_helper->send(fldb,SERV_FLOOD_SZ);
 			changecmod(CMOD_NAME);
 		}
 	}
 	if(tcks%24==0)
 	{
-		sbnd=hlpr->getcount();
+		sbnd=socket_helper->getcount();
 		if(sbnd>(cbnd/2))
 			urat+=6;
 		if(sbnd<(cbnd/2))
@@ -455,7 +455,7 @@ void server::poll()
 	}
 }
 
-void server::action(int typ,short opr)
+void server::action(int typ,short operation_code)
 {
 	if((typ==CLIENT_CONS || typ==CLIENT_CHAR || typ==CLIENT_BANDWIDTH) || (ply && ply->in))
 	{
@@ -465,28 +465,28 @@ void server::action(int typ,short opr)
 			{
 				case CLIENT_ACCEL:
 				ply->in->aity=ship::AI_NULL;
-				if(opr==-2)
+				if(operation_code==-2)
 					ply->in->accel(-1,true);	
-				if(opr==-1)
+				if(operation_code==-1)
 					ply->in->accel(-1,false);	
-				if(opr==1)	
+				if(operation_code==1)	
 					ply->in->accel(+1,false);	
-				if(opr==2)	
+				if(operation_code==2)	
 					ply->in->accel(+1,true);	
 				break;
 
 				case CLIENT_TURN:
 				ply->in->aity=ship::AI_NULL;
-				if(opr==-1)
+				if(operation_code==-1)
 					ply->in->turn(-1);
-				if(opr==+1)
+				if(operation_code==+1)
 					ply->in->turn(+1);
 				break;
 
 				case CLIENT_SHOOT:
-				if(opr==0)
+				if(operation_code==0)
 					ply->in->shoot(false);
-				if(opr==1)
+				if(operation_code==1)
 					ply->in->shoot(true);
 				break;
 
@@ -495,13 +495,13 @@ void server::action(int typ,short opr)
 				ply->in->enemy_target=NULL;
 				ply->in->friendly_target=NULL;
 				ply->in->planet_target=NULL;
-				if(opr>=0 && opr<(planet::ISIZE+ship::ISIZE))
+				if(operation_code>=0 && operation_code<(planet::ISIZE+ship::ISIZE))
 				{
-					if(opr<planet::ISIZE)
-						ply->in->planet_target=planet::find_by_index(opr);
+					if(operation_code<planet::ISIZE)
+						ply->in->planet_target=planet::find_by_index(operation_code);
 					else
 					{
-						ply->in->enemy_target=ship::find_by_index(opr-planet::ISIZE);
+						ply->in->enemy_target=ship::find_by_index(operation_code-planet::ISIZE);
 						if(ply->in->enemy_target==ply->in)
 							ply->in->enemy_target=NULL;
 						if(ply->in->enemy_target) {
@@ -512,14 +512,14 @@ void server::action(int typ,short opr)
 						}
 					}
 				}
-				if(cmod==CMOD_SCAN || cmod==CMOD_HAIL || cmod==CMOD_WHOIS)
-					changecmod(cmod);
-				if(cmod==CMOD_REFIT)
+				if(communication_mode==CMOD_SCAN || communication_mode==CMOD_HAIL || communication_mode==CMOD_WHOIS)
+					changecmod(communication_mode);
+				if(communication_mode==CMOD_REFIT)
 					changecmod(CMOD_HAIL);
 				break;
 
 				case CLIENT_CMOD:
-				switch(opr)
+				switch(operation_code)
 				{
 					case REQ_STAT:
 					changecmod(CMOD_STAT);
@@ -555,25 +555,25 @@ void server::action(int typ,short opr)
 				break;
 
 				case CLIENT_CONS:
-				cons(opr);
+				cons(operation_code);
 				break;
 
 				case CLIENT_CHAR:
-				if(opr==0)
+				if(operation_code==0)
 				{
 					input();
-					inpb[0]='\0';
+					network_buffer[0]='\0';
 				}
-				if(opr>=32 && opr<127)
+				if(operation_code>=32 && operation_code<127)
 				{
-					if(opr>=65 && opr<=90)
-						opr+=32;
+					if(operation_code>=65 && operation_code<=90)
+						operation_code+=32;
 					for(int i=0;i<64;i++)
 					{
-						if(inpb[i]=='\0')
+						if(network_buffer[i]=='\0')
 						{
-							inpb[i]=opr;
-							inpb[i+1]='\0';
+							network_buffer[i]=operation_code;
+							network_buffer[i+1]='\0';
 							break;
 						}
 					}
@@ -581,9 +581,9 @@ void server::action(int typ,short opr)
 				break;
 
 				case CLIENT_BANDWIDTH:
-				if(opr>cbnd && opr>0 && opr<999999999)
+				if(operation_code>cbnd && operation_code>0 && operation_code<999999999)
 				{
-					cbnd=opr;
+					cbnd=operation_code;
 					log("Bandwidth exploration reports %ld maximum",(long)cbnd);
 				}
 				break;
@@ -595,19 +595,19 @@ void server::action(int typ,short opr)
 		catch(error it)
 		{
 			printtomesg(it.str);
-			changecmod(cmod);
+			changecmod(communication_mode);
 		}
 	}
 }
 
-void server::changecmod(int opr)
+void server::changecmod(int operation_code)
 {
 	char* txtp;
 	char txt[1024]; //Text buffer for constructing output
 	alliance* target_alliance; //Alliance for possible choosing
 	int sprite_index; //Sprite to spritetocons with
 
-	cmod=opr;
+	communication_mode=operation_code;
 	txtp=txt;
 	sprite_index=-1;
 	txt[0]='\0';
@@ -619,10 +619,10 @@ void server::changecmod(int opr)
 			// Ignore sound registration errors
 		}
 	}
-	if(cmod!=CMOD_NAME && cmod!=CMOD_PASS && cmod!=CMOD_CHOOSE && !(ply && ply->in))
+	if(communication_mode!=CMOD_NAME && communication_mode!=CMOD_PASS && communication_mode!=CMOD_CHOOSE && !(ply && ply->in))
 		return;
  // amazonq-ignore-next-line
-	switch(opr)
+	switch(operation_code)
 	{
 		case CMOD_NAME:
 		printtocons("Choose player name\n");
@@ -808,21 +808,21 @@ void server::changecmod(int opr)
 	}
 }
 
-void server::cons(int opr)
+void server::cons(int operation_code)
 {
 	char txt[1024]; //Text buffer for constructing output
 	alliance* target_alliance; //Alliance to choose
 	ship* spawned_ship; //Temporary ship scratchpad
 
-	if(opr<0)
+	if(operation_code<0)
 		return;
-	if(cmod!=CMOD_CHOOSE && !(ply && ply->in))
+	if(communication_mode!=CMOD_CHOOSE && !(ply && ply->in))
 		return;
 	txt[0]='\0';
-	switch(cmod)
+	switch(communication_mode)
 	{
 		case CMOD_CHOOSE:
-		target_alliance=alliance::get(opr);
+		target_alliance=alliance::get(operation_code);
 		if(target_alliance)
 		{
 			try {
@@ -842,23 +842,23 @@ void server::cons(int opr)
 		break;
 
 		case CMOD_EQUIP:
-		ply->in->interact(txt,CMOD_EQUIP,opr,ply->in);
+		ply->in->interact(txt,CMOD_EQUIP,operation_code,ply->in);
 		printtomesg(txt);
 		changecmod(CMOD_EQUIP);
 		break;
 
 		case CMOD_SCAN:
 		if(ply->in->enemy_target)
-			ply->in->enemy_target->interact(txt,CMOD_SCAN,opr,ply->in);
+			ply->in->enemy_target->interact(txt,CMOD_SCAN,operation_code,ply->in);
 		else
 			if(ply->in->planet_target)
-				ply->in->planet_target->interact(txt,CMOD_SCAN,opr,ply->in);
+				ply->in->planet_target->interact(txt,CMOD_SCAN,operation_code,ply->in);
 		break;
 
 		case CMOD_HAIL:
 		if(ply->in->enemy_target)
 		{
-			ply->in->enemy_target->interact(txt,CMOD_HAIL,opr,ply->in);
+			ply->in->enemy_target->interact(txt,CMOD_HAIL,operation_code,ply->in);
 			printtomesg(txt);
 			changecmod(CMOD_HAIL);
 		}
@@ -866,7 +866,7 @@ void server::cons(int opr)
 		{
 			if(ply->in->planet_target)
 			{
-				if(opr==5)
+				if(operation_code==5)
 				{
 					try {
 						if(!ply || !ply->in || !ply->in->planet_target) {
@@ -895,13 +895,13 @@ void server::cons(int opr)
 						log("Unknown transport error");
 					}
 				}
-				else if(opr==4)
+				else if(operation_code==4)
 				{
 					changecmod(CMOD_REFIT);
 				}
 				else
 				{
-					ply->in->planet_target->interact(txt,CMOD_HAIL,opr,ply->in);
+					ply->in->planet_target->interact(txt,CMOD_HAIL,operation_code,ply->in);
 					printtomesg(txt);
 					changecmod(CMOD_HAIL);
 				}
@@ -912,23 +912,23 @@ void server::cons(int opr)
 		case CMOD_REFIT:
 		if(ply->in->planet_target)
 		{
-			ply->in->planet_target->interact(txt,CMOD_REFIT,opr,ply->in);
+			ply->in->planet_target->interact(txt,CMOD_REFIT,operation_code,ply->in);
 			printtomesg(txt);
 			changecmod(CMOD_REFIT);
 		}
 		break;
 
 		case CMOD_CHAT:
-		if(opr==1 && ply->in->enemy_target && ply->in->enemy_target->assigned_player)
+		if(operation_code==1 && ply->in->enemy_target && ply->in->enemy_target->assigned_player)
 			changecmod(CMOD_CHATPRIVATE);
-		if(opr==2)
+		if(operation_code==2)
 			changecmod(CMOD_CHATTEAM);
-		if(opr==3)
+		if(operation_code==3)
 			changecmod(CMOD_CHATALL);
 		break;
 
 		case CMOD_WHOIS:
-		if(opr==1)
+		if(operation_code==1)
 		{
 			for(int i=0,j=(ply->in->enemy_target ? ply->in->enemy_target->self+1 : 0);i<ship::ISIZE;i++,j++)
 			{
@@ -948,17 +948,17 @@ void server::cons(int opr)
 		break;
 
 		case CMOD_HACK:
-		if(opr==1)
+		if(operation_code==1)
 		{
 			changecmod(CMOD_PASS1);
 		}
 		if(ply->op && !locg)
 		{
-			if(opr==2)
+			if(operation_code==2)
 				changecmod(CMOD_KICK);
-			if(opr==3)
+			if(operation_code==3)
 				changecmod(CMOD_DELETE);
-			if(opr==4)
+			if(operation_code==4)
 			{
 				log("Server shutdown requested");
 				qsig=true;
@@ -967,7 +967,7 @@ void server::cons(int opr)
 		break;
 
 		default:
-		log("Unknown command mode: %d", cmod);
+		log("Unknown command mode: %d", communication_mode);
 		break;
 	}
 }
@@ -978,27 +978,27 @@ void server::requestline(bool hide)
 
 	buf[0]=SERV_READLN;
 	buf[1]=(unsigned char)hide;
-	if(hlpr)
-		hlpr->send(buf,SERV_READLN_SZ);
+	if(socket_helper)
+		socket_helper->send(buf,SERV_READLN_SZ);
 }
 
 void server::input()
 {
 	player* delp; //Player to delete
 
-	switch(cmod)
+	switch(communication_mode)
 	{
 		case CMOD_NAME:
-		if(inpb[0]=='\0')
+		if(network_buffer[0]=='\0')
 			throw error("Aborted name entry");
 		try
 		{
-			if(inpb[0]=='\0' || inpb[1]=='\0')
+			if(network_buffer[0]=='\0' || network_buffer[1]=='\0')
 			{
-				inpb[0]='\0';
+				network_buffer[0]='\0';
 				throw error("Name too short");
 			}
-			ply=player::get(inpb);
+			ply=player::get(network_buffer);
 			if(ply)
 			{
 				log("Attempting login");
@@ -1015,7 +1015,7 @@ void server::input()
 			}
 			else
 			{
-				ply=new player(inpb);
+				ply=new player(network_buffer);
 				log("New player created");
 				changecmod(CMOD_CHOOSE);
 			}
@@ -1042,7 +1042,7 @@ void server::input()
 		case CMOD_PASS:
 		try
 		{
-			ply->login(inpb);
+			ply->login(network_buffer);
 			log("Login succeeded");
 			changecmod(CMOD_STAT);
 		}
@@ -1057,17 +1057,17 @@ void server::input()
 		break;
 
 		case CMOD_PASS1:
-		inpb[32]='\0';
-		strncpy(tpas,inpb,32);
+		network_buffer[32]='\0';
+		strncpy(tpas,network_buffer,32);
 		tpas[32]='\0';
 		changecmod(CMOD_PASS2);
 		break;
 
 		case CMOD_PASS2:
-		inpb[32]='\0';
-		if(strcmp(inpb,tpas)==0)
+		network_buffer[32]='\0';
+		if(strcmp(network_buffer,tpas)==0)
 		{
-			ply->setpass(inpb);
+			ply->setpass(network_buffer);
 			printtomesg("Password set successfully");
 			log("Set password");
 		}
@@ -1081,7 +1081,7 @@ void server::input()
 		case CMOD_CHATPRIVATE:
 		if(ply && ply->in && ply->in->enemy_target && ply->in->enemy_target->assigned_player)
 		{
-			hail(ply,ply->in->enemy_target->assigned_player,inpb);
+			hail(ply,ply->in->enemy_target->assigned_player,network_buffer);
 			changecmod(CMOD_CHATPRIVATE);
 		}
 		break;
@@ -1091,7 +1091,7 @@ void server::input()
 		{
 			for(int i=0;i<ISIZE;i++)
 				if(connections[i] && connections[i]->ply && connections[i]->ply->in && connections[i]->ply->in->all==ply->in->all)
-					hail(ply,connections[i]->ply,inpb);
+					hail(ply,connections[i]->ply,network_buffer);
 			changecmod(CMOD_CHATTEAM);
 		}
 		break;
@@ -1101,7 +1101,7 @@ void server::input()
 		{
 			for(int i=0;i<ISIZE;i++)
 				if(connections[i] && connections[i]->ply)
-					hail(ply,connections[i]->ply,inpb);
+					hail(ply,connections[i]->ply,network_buffer);
 			changecmod(CMOD_CHATALL);
 		}
 		break;
@@ -1110,19 +1110,19 @@ void server::input()
 		{
 			char sanitized_name[65];
 			int k=0;
-			for(int j=0; j<64 && inpb[j]!='\0'; j++)
+			for(int j=0; j<64 && network_buffer[j]!='\0'; j++)
 			{
-				if(inpb[j]>=32 && inpb[j]<=126 && inpb[j]!='\n' && inpb[j]!='\r')
-					sanitized_name[k++] = inpb[j];
+				if(network_buffer[j]>=32 && network_buffer[j]<=126 && network_buffer[j]!='\n' && network_buffer[j]!='\r')
+					sanitized_name[k++] = network_buffer[j];
 			}
 			sanitized_name[k] = '\0';
 			log("Attemped kick of %s",sanitized_name);
 		}
 		for(int i=0;i<ISIZE;i++)
 		{
-			if(connections[i] && connections[i]!=this && connections[i]->ply && strcmp(inpb,connections[i]->ply->nam)==0)
+			if(connections[i] && connections[i]!=this && connections[i]->ply && strcmp(network_buffer,connections[i]->ply->nam)==0)
 			{
-				bulletin("%s was kicked from the server",inpb);
+				bulletin("%s was kicked from the server",network_buffer);
 				delete connections[i];
 				break;
 			}
@@ -1134,31 +1134,31 @@ void server::input()
 		{
 			char sanitized_name[65];
 			int k=0;
-			for(int j=0; j<64 && inpb[j]!='\0'; j++)
+			for(int j=0; j<64 && network_buffer[j]!='\0'; j++)
 			{
-				if(inpb[j]>=32 && inpb[j]<=126 && inpb[j]!='\n' && inpb[j]!='\r')
-					sanitized_name[k++] = inpb[j];
+				if(network_buffer[j]>=32 && network_buffer[j]<=126 && network_buffer[j]!='\n' && network_buffer[j]!='\r')
+					sanitized_name[k++] = network_buffer[j];
 			}
 			sanitized_name[k] = '\0';
 			log("Attemped deletion of %s",sanitized_name);
 		}
  		for(int i=0;i<ISIZE;i++)
 		{
-			if(connections[i] && connections[i]!=this && connections[i]->ply && strcmp(inpb,connections[i]->ply->nam)==0)
+			if(connections[i] && connections[i]!=this && connections[i]->ply && strcmp(network_buffer,connections[i]->ply->nam)==0)
 			{
-				bulletin("%s was kicked from the server",inpb);
+				bulletin("%s was kicked from the server",network_buffer);
 				delete connections[i];
 				break;
 			}
 		}
-		delp=player::get(inpb);
+		delp=player::get(network_buffer);
 		if(delp && delp!=ply)
 			delete delp;
 		changecmod(CMOD_HACK);
 		break;
 
 		default:
-		log("Unknown input mode: %d", cmod);
+		log("Unknown input mode: %d", communication_mode);
 		changecmod(CMOD_NAME);
 		break;
 	}
@@ -1179,19 +1179,19 @@ void server::printtocons(const char* fmt,...)
 	buf[0]=SERV_CONS;
 	calc::inttodat(len,buf+1);
 
-	if(hlpr)
-		hlpr->send(buf,len+3);
+	if(socket_helper)
+		socket_helper->send(buf,len+3);
 }
 
 void server::spritetocons(int indx)
 {
 	unsigned char buf[SERV_CSPR_SZ]; //Outgoing buffer
 
-	if(indx>=0 && hlpr)
+	if(indx>=0 && socket_helper)
 	{
 		buf[0]=SERV_CSPR;
 		calc::inttodat(indx,buf+1);
-		hlpr->send(buf,SERV_CSPR_SZ);
+		socket_helper->send(buf,SERV_CSPR_SZ);
 	}
 }
 
@@ -1212,8 +1212,8 @@ void server::printtomesg(const char* fmt,...)
 		buf[0]=SERV_MESG;
 		calc::inttodat(len,buf+1);
 
-		if(hlpr)
-			hlpr->send(buf,len+3);
+		if(socket_helper)
+			socket_helper->send(buf,len+3);
 	}
 }
 
@@ -1223,21 +1223,21 @@ void server::uploads()
 
 	if(ply && ply->in)
 	{
-		if(!hlpr) return;
+		if(!socket_helper) return;
 		ply->in->serialize_to_network(SERV_SELF,buf);
-		hlpr->send(buf,SERV_SELF_SZ);
+		socket_helper->send(buf,SERV_SELF_SZ);
 		calc::inttodat(foc,buf+21);
 		/*if(!shpu[ply->in->self])
 		{
 			ply->in->serialize_to_network(SERV_NEW,buf);
-			hlpr->send(buf,SERV_NEW_SZ);
+			socket_helper->send(buf,SERV_NEW_SZ);
 			ply->in->serialize_to_network(SERV_NAME,buf);
-			hlpr->send(buf,SERV_NAME_SZ);
+			socket_helper->send(buf,SERV_NAME_SZ);
 			shpu[ply->in->self]=true;
 		}
 		ply->in->serialize_to_network(SERV_UPD,buf);
 		buf[21]=0;
-		hlpr->send(buf,SERV_UPD_SZ);*/
+		socket_helper->send(buf,SERV_UPD_SZ);*/
 		
 		if(tcks%(urat/10)==0)
 		{
@@ -1246,7 +1246,7 @@ void server::uploads()
 			uploadships();
 			uploadfrags();
 		}
-		hlpr->pump();
+		socket_helper->pump();
 	}
 }
 
@@ -1255,7 +1255,7 @@ void server::uploadplanets()
 	unsigned char buf[256]; //Outgoing scratchpad buffer to use
 	planet* tpln; //Concerned planet
 
-	if(!hlpr) return;
+	if(!socket_helper) return;
 	for(int i=0;i<planet::ISIZE;i++)
 	{
 		tpln=planet::find_by_index(i);
@@ -1266,13 +1266,13 @@ void server::uploadplanets()
 				if(!plnu[i])
 				{
 					tpln->serialize_to_network(SERV_NEW,buf);
-					hlpr->send(buf,SERV_NEW_SZ);
+					socket_helper->send(buf,SERV_NEW_SZ);
 					tpln->serialize_to_network(SERV_NAME,buf);
-					hlpr->send(buf,SERV_NAME_SZ);
+					socket_helper->send(buf,SERV_NAME_SZ);
 					plnu[i]=true;
 				}
 				tpln->serialize_to_network(SERV_UPD,buf);
-				hlpr->send(buf,SERV_UPD_SZ);
+				socket_helper->send(buf,SERV_UPD_SZ);
 			}
 			else
 			{
@@ -1280,7 +1280,7 @@ void server::uploadplanets()
 				{
 					buf[0]=SERV_DEL;
 					calc::inttodat(planet2pres(i),buf+1);
-					hlpr->send(buf,SERV_DEL_SZ);
+					socket_helper->send(buf,SERV_DEL_SZ);
 					plnu[i]=false;
 				}
 			}
@@ -1291,7 +1291,7 @@ void server::uploadplanets()
 			{
 				buf[0]=SERV_DEL;
 				calc::inttodat(planet2pres(i),buf+1);
-				hlpr->send(buf,SERV_DEL_SZ);
+				socket_helper->send(buf,SERV_DEL_SZ);
 				plnu[i]=false;
 			}
 		}
@@ -1303,7 +1303,7 @@ void server::uploadships()
 	unsigned char buf[256]; //Outgoing scratchpad buffer to use
 	ship* spawned_ship; //Concerned ship
 
-	if(!hlpr) return;
+	if(!socket_helper) return;
 	for(int i=0;i<ship::ISIZE;i++)
 	{
 		spawned_ship=ship::find_by_index(i);
@@ -1316,15 +1316,15 @@ void server::uploadships()
 					if(!shpu[i])
 					{
 						spawned_ship->serialize_to_network(SERV_NEW,buf);
-						hlpr->send(buf,SERV_NEW_SZ);
+						socket_helper->send(buf,SERV_NEW_SZ);
 						spawned_ship->serialize_to_network(SERV_NAME,buf);
-						hlpr->send(buf,SERV_NAME_SZ);
+						socket_helper->send(buf,SERV_NAME_SZ);
 						shpu[i]=true;
 					}
 					spawned_ship->serialize_to_network(SERV_UPD,buf);
 					if(ply->in->all->opposes(spawned_ship->all))
 						buf[21]=1;
-					hlpr->send(buf,SERV_UPD_SZ);
+					socket_helper->send(buf,SERV_UPD_SZ);
 				}
 				else
 				{
@@ -1332,7 +1332,7 @@ void server::uploadships()
 					{
 						buf[0]=SERV_DEL;
 						calc::inttodat(ship2pres(i),buf+1);
-						hlpr->send(buf,SERV_DEL_SZ);
+						socket_helper->send(buf,SERV_DEL_SZ);
 						shpu[i]=false;
 					}
 				}
@@ -1343,7 +1343,7 @@ void server::uploadships()
 				{
 					buf[0]=SERV_DEL;
 					calc::inttodat(ship2pres(i),buf+1);
-					hlpr->send(buf,SERV_DEL_SZ);
+					socket_helper->send(buf,SERV_DEL_SZ);
 					shpu[i]=false;
 				}
 			}
@@ -1356,7 +1356,7 @@ void server::uploadfrags()
 	unsigned char buf[256]; //Outgoing scratchpad buffer to use
 	frag* tfrg; //Concerned frag
 
-	if(!hlpr) return;
+	if(!socket_helper) return;
 	for(int i=0;i<frag::ISIZE;i++)
 	{
 		tfrg=frag::get(i);
@@ -1367,14 +1367,14 @@ void server::uploadfrags()
 				if(frgu[i])
 				{
 					tfrg->serialize_to_network(SERV_UPD,buf);
-					hlpr->send(buf,SERV_UPD_SZ);
+					socket_helper->send(buf,SERV_UPD_SZ);
 				}
 				else
 				{
 					tfrg->serialize_to_network(SERV_NEW,buf);
-					hlpr->send(buf,SERV_NEW_SZ);
+					socket_helper->send(buf,SERV_NEW_SZ);
 					tfrg->serialize_to_network(SERV_UPD,buf);
-					hlpr->send(buf,SERV_UPD_SZ);
+					socket_helper->send(buf,SERV_UPD_SZ);
 					frgu[i]=true;
 				}
 			}
@@ -1384,7 +1384,7 @@ void server::uploadfrags()
 				{
 					buf[0]=SERV_DEL;
 					calc::inttodat(frag2pres(i),buf+1);
-					hlpr->send(buf,SERV_DEL_SZ);
+					socket_helper->send(buf,SERV_DEL_SZ);
 					frgu[i]=false;
 				}
 			}
@@ -1395,7 +1395,7 @@ void server::uploadfrags()
 			{
 				buf[0]=SERV_DEL;
 				calc::inttodat(frag2pres(i),buf+1);
-				hlpr->send(buf,SERV_DEL_SZ);	
+				socket_helper->send(buf,SERV_DEL_SZ);	
 				frgu[i]=false;
 			}
 		}
@@ -1413,8 +1413,8 @@ void server::kill()
 		uploadfrags();
 		buf[0]=SERV_DEL;
 		calc::inttodat(ship2pres(ply->in->self),buf+1);
-		if(hlpr)
-			hlpr->send(buf,SERV_DEL_SZ);
+		if(socket_helper)
+			socket_helper->send(buf,SERV_DEL_SZ);
 		printtomesg("You have been destroyed: Game Over");
 		printtocons("Game over");
 	}
@@ -1428,11 +1428,11 @@ void server::hilight(ship* spawned_ship)
 {
 	unsigned char buf[SERV_HILIGHT_SZ]; //Buffer for sending hilight information
 
-	if(spawned_ship && hlpr)
+	if(spawned_ship && socket_helper)
 	{
 		buf[0]=SERV_HILIGHT;
 		calc::inttodat(ship2pres(spawned_ship->self),buf+1);
-		hlpr->send(buf,SERV_HILIGHT_SZ);
+		socket_helper->send(buf,SERV_HILIGHT_SZ);
 	}
 }
 

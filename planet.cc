@@ -205,16 +205,16 @@ void planet::shipyards()
 	}
 }
 
-int planet::interact(char* txt,short cmod,short opr,ship* player_ship)
+int planet::interact(char* txt,short communication_mode,short operation_code,ship* player_ship)
 {
 	long cost; //Cost of purchase
 
 	if(!player_ship)
 		return -1;
-	switch(cmod)
+	switch(communication_mode)
 	{
 		case CMOD_SCAN:
-		if(opr==-1)
+		if(operation_code==-1)
 		{
 			txt+=sprintf(txt,"%s\n",nam);
 			if(player_ship->all->opposes(all))
@@ -238,7 +238,7 @@ int planet::interact(char* txt,short cmod,short opr,ship* player_ship)
 			txt+=sprintf(txt,"\n[1] Lay in a course\n");
 			return spr;
 		}
-		if(opr==1 && this==player_ship->planet_target)
+		if(operation_code==1 && this==player_ship->planet_target)
 		{
 			player_ship->aity=ship::AI_AUTOPILOT;
 		}
@@ -263,7 +263,7 @@ int planet::interact(char* txt,short cmod,short opr,ship* player_ship)
 			txt+=sprintf(txt,"Out of range");
 			return -1;
 		}
-		if(opr==-1)
+		if(operation_code==-1)
 		{
 			txt+=sprintf(txt,"Hailing %s\n\nServices\n\n",nam);
 			cost=player_ship->purchase(ship::PRCH_FUEL,all->ripo,false);
@@ -278,22 +278,22 @@ int planet::interact(char* txt,short cmod,short opr,ship* player_ship)
 			txt+=sprintf(txt,"[4] Purchase equipment\n");
 			txt+=sprintf(txt,"[5] Save location");
 		}
-		if(opr==1 || opr==2 || opr==3)
+		if(operation_code==1 || operation_code==2 || operation_code==3)
 		{
-		//	if(opr==1)
+		//	if(operation_code==1)
 		//		cost=player_ship->purchase(ship::PRCH_FUEL,all->ripo,false);
-		//	if(opr==2)
+		//	if(operation_code==2)
 		//		cost=player_ship->purchase(ship::PRCH_HULL,all->ripo,false);
-		//	if(opr==3)
+		//	if(operation_code==3)
 		//		cost=player_ship->purchase(ship::PRCH_ARMS,all->ripo,false);
 		//	if(cost>0)
 		//	{
 				player_ship->transport(this);
-				if(opr==1)
+				if(operation_code==1)
 					player_ship->purchase(ship::PRCH_FUEL,all->ripo,true);
-				if(opr==2)
+				if(operation_code==2)
 					player_ship->purchase(ship::PRCH_HULL,all->ripo,true);
-				if(opr==3)
+				if(operation_code==3)
 					player_ship->purchase(ship::PRCH_ARMS,all->ripo,true);
 		//	}
 		}
@@ -320,7 +320,7 @@ int planet::interact(char* txt,short cmod,short opr,ship* player_ship)
 			txt+=sprintf(txt,"Out of range");
 			return -1;
 		}
-		if(opr==-1)
+		if(operation_code==-1)
 		{
 			txt+=sprintf(txt,"Hailing %s\n\nEquipment\n\n",nam);
 			for(int i=0;i<MAX_EQUIPMENT_SLOTS;i++)
@@ -333,13 +333,13 @@ int planet::interact(char* txt,short cmod,short opr,ship* player_ship)
 			}
 			txt+=sprintf(txt,"\nAvailable mass: %hd\n",player_ship->get_available_cargo_space());
 		}
-		if(opr>=1 && opr<=MAX_EQUIPMENT_SLOTS && sold[opr-1])
+		if(operation_code>=1 && operation_code<=MAX_EQUIPMENT_SLOTS && sold[operation_code-1])
 		{
-			//cost=player_ship->purchase(sold[opr-1],all->ripo,false);
+			//cost=player_ship->purchase(sold[operation_code-1],all->ripo,false);
 			
 			player_ship->transport(this);
-			player_ship->purchase(sold[opr-1],all->ripo,true);
-			txt+=sprintf(txt,"%s purchased and installed",sold[opr-1]->nam);
+			player_ship->purchase(sold[operation_code-1],all->ripo,true);
+			txt+=sprintf(txt,"%s purchased and installed",sold[operation_code-1]->nam);
 		}
 		break;
 

@@ -36,10 +36,10 @@ class server //Controls connections to players
 	~server(); //Destructor, closes socket
 
 	void log(const char* fmt,...); //Output to the server log from this connection
-	void poll(); //Poll for client data and act on it	
-	void action(int typ,short opr); //Process an action from the client, given action type and operand
-	void changecmod(int opr); //Change to given client<->server console mode
-	void cons(int opr); //Receive a console impulse from the client, number given as operand
+	void process_network_messages(); //Poll for client data and act on it	
+	void action(int typ,short operation_code); //Process an action from the client, given action type and operand
+	void changecmod(int operation_code); //Change to given client<->server console mode
+	void cons(int operation_code); //Receive a console impulse from the client, number given as operand
 	void requestline(bool hide); //Request a line of input from the client console, if secret (password mode) then specify
 	void input(); //Register that readline input has completed from the client, it's time to process it
 	void printtocons(const char* fmt,...); //Print to the client's console display
@@ -62,11 +62,11 @@ class server //Controls connections to players
 
 	int self; //Player number
 	TCPsocket sock; //Socket associated with this player connection
-	sockhelper* hlpr; //Helper for above
+	sockhelper* socket_helper; //Helper for above
 	player* ply; //Player associated with this connection
 	bool auth; //Authorised yet?
-	int cmod; //Current communications mode; just statekeeping
-	char inpb[65]; //Incoming text input buffer
+	int communication_mode; //Current communications mode; just statekeeping
+	char network_buffer[65]; //Incoming text input buffer
 	char tpas[33]; //Temporary password store, for double confirmation
 	bool acth[32]; //Action history, prevents multiple repetition cheating
 	bool* shpu;
