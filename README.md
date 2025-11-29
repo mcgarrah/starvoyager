@@ -266,8 +266,13 @@ Enthusiastic coder: Michael McGarrah (mcgarrah@gmail.com)
 ## Credits
 
 **Original Author**: Richard Thrippleton
+
 **Past Maintainer**: Johnny A. Solbu
+
 **Current Maintainer**: Michael McGarrah
+
 **Engine**: SDL (Simple DirectMedia Layer)  
+
 **Theme**: Star Trek Universe  
+
 **Inspired by**: Elite, Frontier series
